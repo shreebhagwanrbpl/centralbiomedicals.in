@@ -11,211 +11,157 @@ import {
   PackageCheck,
   ChevronDown,
   ChevronRight,
+  Package,
 } from "lucide-react";
 
 import PageBanner from "@/components/PageBanner";
 import SectionTitle from "@/components/SectionTitle";
-
 import { fetchAllDynamicProducts } from "@/lib/fetchProducts";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [openedCategory, setOpenedCategory] = useState("");
   const [activeCategory, setActiveCategory] = useState("");
 
   useEffect(() => {
     const loadProducts = async () => {
-      const fetched = await fetchAllDynamicProducts();
-      setProducts(fetched);
+      try {
+        setLoading(true);
+        const fetched = await fetchAllDynamicProducts();
+        setProducts(fetched || []);
+      } catch (err) {
+        console.error("Error loading products:", err);
+        setProducts([]);
+      } finally {
+        setLoading(false);
+      }
     };
     loadProducts();
   }, []);
 
-  const filteredProducts =
-    useMemo(() => {
+  const filteredProducts = useMemo(() => {
+    return products.filter((item) => {
+      const text = `
+        ${item.title || ""}
+        ${item.brand || ""}
+        ${item.category || ""}
+      `.toLowerCase();
 
-      return products.filter((item) => {
+      return text.includes(search.toLowerCase());
+    });
+  }, [products, search]);
 
-        const text = `
-        ${item.title}
-        ${item.brand}
-        ${item.category}
-        `.toLowerCase();
+  const groupedProducts = useMemo(() => {
+    const obj = {};
 
-        return text.includes(
-          search.toLowerCase()
-        );
+    filteredProducts.forEach((item) => {
+      const cat = item.category || "Biomedical Equipment";
+      if (!obj[cat]) {
+        obj[cat] = [];
+      }
+      obj[cat].push(item);
+    });
 
-      });
+    return obj;
+  }, [filteredProducts]);
 
-    }, [search]);
-
-  const groupedProducts =
-    useMemo(() => {
-
-      const obj = {};
-
-      filteredProducts.forEach((item) => {
-
-        if (!obj[item.category]) {
-
-          obj[item.category] = [];
-
-        }
-
-        obj[item.category].push(item);
-
-      });
-
-      return obj;
-
-    }, [filteredProducts]);
-
-  const categories =
-    Object.keys(groupedProducts);
+  const categories = Object.keys(groupedProducts);
 
   const toggleCategory = (category) => {
-
     if (openedCategory === category) {
-
       setOpenedCategory("");
-
       return;
-
     }
-
     setOpenedCategory(category);
-
   };
 
-  const scrollToProduct = (
-    slug,
-    category
-  ) => {
-
+  const scrollToProduct = (slug, category) => {
     setOpenedCategory(category);
-
     setActiveCategory(category);
 
     setTimeout(() => {
-
-      const el =
-        document.getElementById(slug);
-
+      const el = document.getElementById(slug);
       if (el) {
-
         el.scrollIntoView({
-
           behavior: "smooth",
-
           block: "start",
-
         });
-
       }
-
     }, 250);
-
   };
 
   return (
-    <>
+    <div className="bg-[#f8fafc] text-[#18344b]">
       <PageBanner
         title="Our Products"
         subtitle="Explore advanced biomedical and diagnostic equipment designed for modern healthcare excellence."
       />
 
-      <section className="py-24 bg-slate-50">
-
+      <section className="py-20 bg-gradient-to-b from-white via-[#f0f6fb] to-white">
         <div className="max-w-7xl mx-auto px-5">
-
           <SectionTitle
             badge="Featured Products"
             title="Premium Biomedical Equipment"
             description="Explore our comprehensive range of high-quality biomedical and diagnostic equipment designed to deliver precision, reliability, and advanced healthcare solutions for hospitals, laboratories, clinics, and research centers across India."
             center
           />
+
           <div className="grid lg:grid-cols-[320px_1fr] gap-10 mt-16">
-
-            {/* ======================
-                LEFT SIDEBAR
-          ====================== */}
-
-            <aside className="sticky top-28 h-fit rounded-[30px] border border-green-100 bg-white p-6 shadow-xl shadow-green-100">
-
-              {/* Heading */}
-
+            {/* LEFT SIDEBAR */}
+            <aside className="sticky top-28 h-fit rounded-[30px] border border-[#d0e2f2] bg-white p-6 shadow-xl shadow-slate-200/50">
               <div className="mb-6">
-
-                <span className="inline-flex rounded-full bg-green-100 px-4 py-2 text-sm font-semibold text-green-700">
-
+                <span className="inline-flex rounded-full bg-[#e9f3fa] px-4 py-1.5 text-xs font-bold text-[#245d8e]">
                   Browse
-
                 </span>
-
-                <h2 className="mt-4 text-2xl font-bold text-slate-900">
-
+                <h2 className="mt-3 text-2xl font-bold text-[#18344b]">
                   Categories
-
                 </h2>
-
               </div>
 
               {/* Search */}
-
               <input
                 type="text"
                 placeholder="Search Products..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-12 w-full rounded-xl border border-green-200 bg-green-50 px-4 text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-green-600 focus:bg-white focus:ring-4 focus:ring-green-100"
+                className="h-12 w-full rounded-xl border border-[#d0e2f2] bg-[#f0f6fb] px-4 text-[#18344b] outline-none transition-all placeholder:text-[#536e84]/60 focus:border-[#245d8e] focus:bg-white focus:ring-4 focus:ring-[#245d8e]/10"
               />
 
               {/* Categories */}
-
               <div className="mt-6 space-y-3">
-
                 {categories.map((category) => (
-
                   <div
                     key={category}
-                    className="overflow-hidden rounded-2xl border border-green-100"
+                    className="overflow-hidden rounded-2xl border border-[#d0e2f2]"
                   >
-
                     <button
                       onClick={() => toggleCategory(category)}
-                      className={`flex w-full items-center justify-between px-5 py-4 font-medium transition-all duration-300
-
-          ${activeCategory === category
-                          ? "bg-green-600 text-white shadow-lg shadow-green-200"
-                          : "bg-white text-slate-700 hover:bg-green-50"
-                        }`}
+                      className={`flex w-full items-center justify-between px-5 py-4 font-semibold text-sm transition-all duration-300 ${
+                        activeCategory === category
+                          ? "bg-[#245d8e] text-white shadow-md shadow-[#245d8e]/20"
+                          : "bg-white text-[#18344b] hover:bg-[#f0f6fb]"
+                      }`}
                     >
-
                       <span className="flex items-center gap-3">
-
                         {openedCategory === category ? (
                           <ChevronDown size={18} />
                         ) : (
                           <ChevronRight size={18} />
                         )}
-
                         {category}
-
                       </span>
 
                       <span
-                        className={`rounded-full px-2.5 py-1 text-xs font-bold ${activeCategory === category
-                          ? "bg-white/20 text-white"
-                          : "bg-green-100 text-green-700"
-                          }`}
+                        className={`rounded-full px-2.5 py-1 text-xs font-bold ${
+                          activeCategory === category
+                            ? "bg-white/20 text-white"
+                            : "bg-[#e9f3fa] text-[#245d8e]"
+                        }`}
                       >
-
                         {groupedProducts[category].length}
-
                       </span>
-
                     </button>
 
                     <div
@@ -227,207 +173,151 @@ export default function ProductsPage() {
                             : "0px",
                       }}
                     >
-
                       {groupedProducts[category].map((item) => (
-
                         <button
                           key={item.slug}
-                          onClick={() =>
-                            scrollToProduct(item.slug, category)
-                          }
-                          className="block w-full border-t border-green-100 px-6 py-3 text-left text-sm text-slate-600 transition hover:bg-green-50 hover:text-green-700"
+                          onClick={() => scrollToProduct(item.slug, category)}
+                          className="block w-full border-t border-[#d0e2f2] px-6 py-3 text-left text-xs font-semibold text-[#536e84] transition hover:bg-[#e9f3fa] hover:text-[#245d8e]"
                         >
-
                           {item.title}
-
                         </button>
-
                       ))}
-
                     </div>
-
                   </div>
-
                 ))}
-
               </div>
-
             </aside>
 
-            {/* ======================
-                RIGHT SIDE
-          ====================== */}
-
+            {/* RIGHT SIDE */}
             <div>
-
-              <div className="space-y-16">
-
-                {Object.entries(groupedProducts).map(
-                  ([category, list]) => (
-
+              {loading ? (
+                <div className="space-y-8">
+                  {[...Array(3)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="h-64 rounded-3xl border border-[#d0e2f2] bg-white p-6 animate-pulse"
+                    />
+                  ))}
+                </div>
+              ) : categories.length === 0 ? (
+                <div className="text-center rounded-3xl border border-[#d0e2f2] bg-white p-16 shadow-sm">
+                  <Package size={48} className="mx-auto text-[#245d8e]/60 mb-4 animate-bounce" />
+                  <h3 className="text-2xl font-bold text-[#18344b]">No Products Found</h3>
+                  <p className="mt-2 text-sm text-[#536e84]">
+                    Products added in the administration panel will appear here.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-16">
+                  {Object.entries(groupedProducts).map(([category, list]) => (
                     <section
                       key={category}
                       id={category.replace(/\s+/g, "-").toLowerCase()}
                     >
-
                       {/* Category Header */}
-
-                      <div className="mb-10 flex items-center justify-between border-b border-green-100 pb-5">
-
+                      <div className="mb-10 flex items-center justify-between border-b border-[#d0e2f2] pb-5">
                         <div>
-
-                          <span className="rounded-full bg-green-100 px-4 py-2 text-sm font-semibold text-green-700">
-
+                          <span className="rounded-full bg-[#e9f3fa] border border-[#d0e2f2] px-4 py-1.5 text-xs font-bold text-[#245d8e]">
                             Category
-
                           </span>
-
-                          <h2 className="mt-4 text-4xl font-black text-slate-900">
-
+                          <h2 className="mt-3 text-3xl font-black text-[#18344b]">
                             {category}
-
                           </h2>
-
                         </div>
 
-                        <div className="rounded-full border border-green-100 bg-green-50 px-5 py-2 text-green-700 font-semibold">
-
+                        <div className="rounded-full border border-[#d0e2f2] bg-[#f0f6fb] px-5 py-2 text-xs font-bold text-[#245d8e]">
                           {list.length} Products
-
                         </div>
-
                       </div>
 
-                      <div className="space-y-8">
-
+                      <div className="space-y-6">
                         {list.map((product) => (
-
                           <div
                             key={product.slug}
                             id={product.slug}
-                            className="group rounded-[30px] border border-green-100 bg-white p-7 shadow-lg shadow-green-100 transition-all duration-300 hover:-translate-y-2 hover:border-green-300 hover:shadow-2xl hover:shadow-green-200"
+                            className="group rounded-[30px] border border-[#d0e2f2] bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#245d8e] hover:shadow-xl"
                           >
-
-                            <div className="grid items-center gap-8 lg:grid-cols-[250px_1fr_190px]">
-
+                            <div className="grid items-center gap-6 lg:grid-cols-[220px_1fr_180px]">
                               {/* Image */}
-
-                              <div className="flex h-[220px] items-center justify-center overflow-hidden rounded-3xl border border-green-100 bg-gradient-to-br from-green-50 to-white">
-
-                                <Image
-                                  src={product.image}
-                                  alt={product.title}
-                                  width={220}
-                                  height={220}
-                                  className="max-h-[180px] object-contain transition duration-300 group-hover:scale-105"
-                                />
-
+                              <div className="flex h-[200px] items-center justify-center overflow-hidden rounded-2xl border border-[#d0e2f2] bg-[#f0f6fb] p-4">
+                                {product.image && product.image !== "/logo.png" ? (
+                                  <Image
+                                    src={product.image}
+                                    alt={product.title}
+                                    width={200}
+                                    height={200}
+                                    className="max-h-[160px] object-contain transition duration-300 group-hover:scale-105"
+                                  />
+                                ) : (
+                                  <div className="text-center text-[#245d8e]">
+                                    <Package size={36} className="mx-auto mb-2" />
+                                    <span className="text-xs font-bold uppercase tracking-wider">{product.category || "Analyzer"}</span>
+                                  </div>
+                                )}
                               </div>
 
                               {/* Content */}
-
                               <div>
-
-                                <h3 className="text-2xl font-bold text-slate-900">
-
+                                <h3 className="text-xl font-bold text-[#18344b]">
                                   {product.title}
-
                                 </h3>
 
-                                <p className="mt-4 leading-8 text-slate-600">
-
-                                  {product.description}
-
+                                <p className="mt-2 text-sm leading-relaxed text-[#536e84]">
+                                  {product.desc || product.description || "High precision diagnostic instrument engineered for clinical accuracy."}
                                 </p>
 
-                                <div className="mt-6 grid grid-cols-2 gap-4">
+                                <div className="mt-4 grid grid-cols-2 gap-3">
+                                  {product.brand && (
+                                    <div className="rounded-xl border border-[#d0e2f2] bg-[#f0f6fb] p-3">
+                                      <p className="text-[11px] font-bold uppercase tracking-wider text-[#245d8e]">
+                                        Brand
+                                      </p>
+                                      <p className="mt-0.5 text-xs font-bold text-[#18344b]">
+                                        {product.brand}
+                                      </p>
+                                    </div>
+                                  )}
 
-                                  <div className="rounded-2xl border border-green-100 bg-green-50 p-4">
-
-                                    <p className="text-xs font-semibold uppercase tracking-wide text-green-600">
-
-                                      Brand
-
-                                    </p>
-
-                                    <p className="mt-2 font-bold text-slate-900">
-
-                                      {product.brand}
-
-                                    </p>
-
-                                  </div>
-
-                                  <div className="rounded-2xl border border-green-100 bg-green-50 p-4">
-
-                                    <p className="text-xs font-semibold uppercase tracking-wide text-green-600">
-
-                                      Model
-
-                                    </p>
-
-                                    <p className="mt-2 font-bold text-slate-900">
-
-                                      {product.model}
-
-                                    </p>
-
-                                  </div>
-
+                                  {product.model && (
+                                    <div className="rounded-xl border border-[#d0e2f2] bg-[#f0f6fb] p-3">
+                                      <p className="text-[11px] font-bold uppercase tracking-wider text-[#245d8e]">
+                                        Model
+                                      </p>
+                                      <p className="mt-0.5 text-xs font-bold text-[#18344b]">
+                                        {product.model}
+                                      </p>
+                                    </div>
+                                  )}
                                 </div>
-
                               </div>
 
                               {/* Button */}
-
                               <div className="flex justify-center lg:justify-end">
-
                                 <Link
-                                  href={`/products/${product.slug}`}
+                                  href={`/items/${product.slug}`}
                                   className="w-full lg:w-auto"
                                 >
-
-                                  <button className="w-full rounded-xl bg-green-600 px-8 py-4 font-semibold text-white transition-all duration-300 hover:bg-green-700 hover:shadow-lg hover:shadow-green-200 lg:w-auto">
-
+                                  <button className="w-full rounded-xl bg-[#245d8e] px-6 py-3.5 text-xs font-bold text-white transition-all duration-300 hover:bg-[#1c4a73] hover:shadow-lg lg:w-auto">
                                     View Details →
-
                                   </button>
-
                                 </Link>
-
                               </div>
-
                             </div>
-
                           </div>
-
                         ))}
-
                       </div>
-
                     </section>
-
-                  )
-                )}
-
-              </div>
-
+                  ))}
+                </div>
+              )}
             </div>
-
           </div>
-
         </div>
-
       </section>
 
-      {/* ===========================
-            WHY CHOOSE US
-      =========================== */}
-
-      <section className="py-24 bg-gradient-to-b from-white to-green-50">
-
+      {/* WHY CHOOSE US */}
+      <section className="py-20 bg-white border-t border-[#d0e2f2]">
         <div className="max-w-7xl mx-auto px-5">
-
           <SectionTitle
             badge="Why Choose Our Products"
             title="Trusted Quality & Innovation"
@@ -435,84 +325,51 @@ export default function ProductsPage() {
             center
           />
 
-          <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-
+          <div className="mt-14 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
             {[
               {
-                icon: <ShieldCheck size={32} />,
+                icon: <ShieldCheck size={30} />,
                 title: "Certified Quality",
                 desc: "Every product undergoes strict quality testing to ensure safety, durability and reliable performance.",
               },
-
               {
-                icon: <Truck size={32} />,
+                icon: <Truck size={30} />,
                 title: "Fast Delivery",
                 desc: "Quick and secure delivery across India with safe packaging and timely logistics support.",
               },
-
               {
-                icon: <BadgeCheck size={32} />,
+                icon: <BadgeCheck size={30} />,
                 title: "Trusted Support",
                 desc: "Dedicated technical assistance and after-sales service whenever you need expert guidance.",
               },
-
               {
-                icon: <PackageCheck size={32} />,
+                icon: <PackageCheck size={30} />,
                 title: "Premium Equipment",
                 desc: "Advanced biomedical equipment designed for modern laboratories, hospitals and healthcare professionals.",
               },
-
             ].map((item, index) => (
-
               <div
                 key={index}
-                className="group rounded-[30px] border border-green-100 bg-white p-8 text-center shadow-lg shadow-green-100 transition-all duration-300 hover:-translate-y-2 hover:border-green-300 hover:shadow-2xl hover:shadow-green-200"
+                className="group rounded-[30px] border border-[#d0e2f2] bg-[#f0f6fb]/60 p-8 text-center shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-[#245d8e] hover:shadow-xl hover:bg-white"
               >
-
-                {/* Icon */}
-
-                <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-green-100 to-emerald-100 text-green-600 transition-all duration-300 group-hover:bg-green-600 group-hover:text-white">
-
+                <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-white border border-[#d0e2f2] text-[#245d8e] transition-all duration-300 group-hover:bg-[#245d8e] group-hover:text-white group-hover:border-[#245d8e]">
                   {item.icon}
-
                 </div>
 
-                {/* Title */}
-
-                <h3 className="text-2xl font-bold text-slate-900">
-
+                <h3 className="text-xl font-bold text-[#18344b]">
                   {item.title}
-
                 </h3>
 
-                {/* Description */}
-
-                <p className="mt-4 leading-7 text-slate-600">
-
+                <p className="mt-3 text-xs sm:text-sm leading-relaxed text-[#536e84]">
                   {item.desc}
-
                 </p>
 
-                {/* Bottom Line */}
-
-                <div className="mx-auto mt-8 h-1 w-14 rounded-full bg-green-500 transition-all duration-300 group-hover:w-24"></div>
-
+                <div className="mx-auto mt-6 h-1 w-12 rounded-full bg-[#245d8e]/30 transition-all duration-300 group-hover:w-20 group-hover:bg-[#245d8e]"></div>
               </div>
-
             ))}
-
           </div>
-
         </div>
-
       </section>
-
-      {/* CTA */}
-
-      {/* <CTASection /> */}
-
-    </>
-
+    </div>
   );
-
 }

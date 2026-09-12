@@ -127,19 +127,15 @@ export default function HeroCarousel({
   const dbSlides = parseMediaList(homeData);
   const slides = dbSlides.length > 0 ? dbSlides : FALLBACK_SLIDES;
 
-  // Dynamic texts with fallbacks
+  // Dynamic texts - strictly dynamic without static fallback text
   const heroTitle =
     homeData?.title?.trim() ||
-    (locationTitle
-      ? `Precision Medical Equipment & Diagnostic Solutions in ${locationTitle}`
-      : "Precision Medical Equipment & Diagnostic Solutions");
+    (locationTitle ? `Leading Biomedical & Diagnostic Supplier in ${locationTitle}` : "");
 
-  const heroDescription =
-    homeData?.description?.trim() ||
-    "Equipping hospitals, pathology centers, and clinical laboratories with top-tier automated analyzers, NABL-traceable calibration, and 24/7 rapid technical engineering support across India.";
+  const heroDescription = homeData?.description?.trim() || "";
 
-  const btn1Text = homeData?.button1Text?.trim() || "Explore Product Catalog";
-  const btn2Text = homeData?.button2Text?.trim() || "Request Official Quote";
+  const btn1Text = homeData?.button1Text?.trim() || "";
+  const btn2Text = homeData?.button2Text?.trim() || "";
 
   // Static routes for buttons
   const btn1Href = makeLink("/items");
@@ -151,7 +147,7 @@ export default function HeroCarousel({
 
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 5500);
+    }, 6000);
 
     return () => clearInterval(timer);
   }, [isPlaying, slides.length, currentSlide]);
@@ -170,7 +166,7 @@ export default function HeroCarousel({
       const vid = videoRefs.current[currentSlide];
       if (vid) {
         vid.currentTime = 0;
-        vid.play().catch(() => {});
+        vid.play().catch(() => { });
       }
     }
   }, [currentSlide, slides]);
@@ -211,10 +207,10 @@ export default function HeroCarousel({
   const activeMedia = slides[currentSlide] || slides[0];
 
   return (
-    <section className="relative overflow-hidden bg-[#1a0f05] text-white">
-      {/* Background Media Viewport with Full Brightness & High Image Visibility */}
+    <section className="relative overflow-hidden bg-[#07131e] text-white">
+      {/* Background Media Viewport with Immersive Zoom & Crystal Clear Contrast */}
       <div
-        className="relative w-full h-[380px] sm:h-[440px] md:h-[490px] lg:h-[530px] overflow-hidden"
+        className="relative w-full h-[420px] sm:h-[480px] md:h-[540px] lg:h-[600px] overflow-hidden"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -222,14 +218,18 @@ export default function HeroCarousel({
         <AnimatePresence mode="wait">
           <motion.div
             key={currentSlide}
-            initial={{ opacity: 0, scale: 1.02 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.6, ease: "easeInOut" }}
-            className="absolute inset-0 w-full h-full"
+            transition={{ duration: 0.8, ease: "easeInOut" }}
+            className="absolute inset-0 w-full h-full overflow-hidden"
           >
+            {/* Immersive Ken Burns Zoom Effect */}
             {activeMedia?.type === "video" ? (
-              <video
+              <motion.video
+                initial={{ scale: 1 }}
+                animate={{ scale: 1.1 }}
+                transition={{ duration: 7, ease: "easeOut" }}
                 ref={(el) => (videoRefs.current[currentSlide] = el)}
                 src={activeMedia.url}
                 className="w-full h-full object-cover object-center"
@@ -240,10 +240,13 @@ export default function HeroCarousel({
                 preload="auto"
               />
             ) : (
-              <img
+              <motion.img
+                initial={{ scale: 1 }}
+                animate={{ scale: 1.14 }}
+                transition={{ duration: 7, ease: "easeOut" }}
                 src={activeMedia?.url}
                 alt={`Hero Slide ${currentSlide + 1}`}
-                className="w-full h-full object-cover object-center brightness-[0.95] contrast-[1.05]"
+                className="w-full h-full object-cover object-center brightness-[0.85] contrast-[1.1]"
                 onError={(e) => {
                   e.target.src = FALLBACK_SLIDES[0].url;
                 }}
@@ -252,92 +255,102 @@ export default function HeroCarousel({
           </motion.div>
         </AnimatePresence>
 
-        {/* Soft, Non-intrusive Gradient only on text side (Leaves image bright and visible) */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/35 to-transparent lg:w-3/5" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
+        {/* Multi-layered Dark Gradient Overlays for 100% Guaranteed High-Contrast Text Legibility */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#07131e]/95 via-[#0c1f30]/85 to-[#16334a]/60 z-10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#07131e]/90 via-transparent to-[#07131e]/50 z-10" />
 
         {/* Foreground Content Container */}
-        <div className="container-custom relative z-20 h-full flex flex-col justify-center py-6 sm:py-8">
+        <div className="container-custom relative z-20 h-full flex flex-col justify-center py-8 sm:py-12">
           <div className="max-w-2xl lg:max-w-3xl">
             {/* Top Badge */}
             <motion.div
               initial={{ opacity: 0, y: -15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/50 px-3.5 py-1.5 text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-[#FDFBD4] shadow-lg backdrop-blur-md"
+              className="inline-flex items-center gap-2 rounded-full border border-[#4f8fc2]/50 bg-[#245d8e]/90 px-4 py-1.5 text-xs sm:text-sm font-extrabold uppercase tracking-wider text-white shadow-lg backdrop-blur-md"
             >
-              <Sparkles size={14} className="text-[#FBBF24] animate-pulse" />
-              <span>
+              <Sparkles size={15} className="text-[#a4cdec] animate-pulse" />
+              <span className="text-white">
                 {locationTitle
                   ? `Leading Biomedical Supplier in ${locationTitle}`
                   : "Pioneering Biomedical & Diagnostic Innovations"}
               </span>
             </motion.div>
 
-            {/* Main Heading with crisp drop-shadow */}
-            <motion.h1
-              key={`title-${currentSlide}-${heroTitle}`}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="mt-3 sm:mt-4 text-2xl font-black tracking-tight text-white sm:text-3xl md:text-4xl lg:text-5xl leading-[1.14] drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]"
-            >
-              {heroTitle}
-            </motion.h1>
-
-            {/* Description with crisp drop-shadow */}
-            <motion.p
-              key={`desc-${currentSlide}-${heroDescription}`}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="mt-2.5 sm:mt-3 text-xs sm:text-sm md:text-base leading-relaxed text-[#FDFBD4] max-w-2xl font-medium line-clamp-3 md:line-clamp-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)]"
-            >
-              {heroDescription}
-            </motion.p>
-
-            {/* Action Buttons */}
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="mt-5 sm:mt-6 flex flex-wrap items-center gap-3"
-            >
-              <Link
-                href={btn1Href}
-                className="flex items-center justify-center gap-2 rounded-xl bg-[#C05800] !text-white px-6 py-3 text-xs sm:text-sm font-bold shadow-xl shadow-[#C05800]/40 transition-all duration-300 hover:bg-[#E06D00] hover:shadow-2xl hover:-translate-y-0.5 border border-amber-400/20"
+            {/* Main Heading with crisp high-contrast drop-shadow */}
+            {heroTitle && (
+              <motion.h1
+                key={`title-${currentSlide}-${heroTitle}`}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="mt-4 text-3xl font-black tracking-tight !text-white sm:text-4xl md:text-5xl lg:text-6xl leading-[1.15] drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)]"
               >
-                <span className="!text-white font-bold">{btn1Text}</span>
-                <ArrowRight size={16} className="!text-white" />
-              </Link>
+                {heroTitle}
+              </motion.h1>
+            )}
 
-              <Link
-                href={btn2Href}
-                className="flex items-center justify-center gap-2 rounded-xl border border-white/50 bg-black/60 !text-white px-6 py-3 text-xs sm:text-sm font-bold backdrop-blur-md shadow-md transition-all duration-300 hover:bg-white hover:!text-[#38240D] hover:border-white hover:-translate-y-0.5"
+            {/* Description with high contrast */}
+            {heroDescription && (
+              <motion.p
+                key={`desc-${currentSlide}-${heroDescription}`}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="mt-3.5 text-sm sm:text-base md:text-lg leading-relaxed !text-[#eef5fa] max-w-2xl font-medium line-clamp-3 md:line-clamp-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]"
               >
-                <PhoneCall size={16} className="text-[#FBBF24]" />
-                <span className="font-bold">{btn2Text}</span>
-              </Link>
-            </motion.div>
+                {heroDescription}
+              </motion.p>
+            )}
+
+            {/* Action Buttons with Clear Normal & Hover States */}
+            {(btn1Text || btn2Text) && (
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                className="mt-6 sm:mt-8 flex flex-wrap items-center gap-4"
+              >
+                {btn1Text && (
+                  <Link
+                    href={btn1Href}
+                    className="group inline-flex items-center justify-center gap-2 rounded-2xl bg-[#245d8e] px-7 py-3.5 text-sm sm:text-base font-bold text-white shadow-xl shadow-[#245d8e]/40 transition-all duration-300 hover:bg-[#183e60] hover:scale-105 hover:shadow-2xl border border-[#4f8fc2]/50"
+                  >
+                    <span className="text-white font-bold">{btn1Text}</span>
+                    <ArrowRight size={18} className="text-white transition-transform duration-300 group-hover:translate-x-1" />
+                  </Link>
+                )}
+
+                {btn2Text && (
+                  <Link
+                    href={btn2Href}
+                    className="group inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-white/70 bg-white/15 px-7 py-3.5 text-sm sm:text-base font-bold text-white backdrop-blur-md shadow-lg transition-all duration-300 hover:bg-white hover:text-[#18344b] hover:border-white hover:scale-105"
+                  >
+                    <PhoneCall size={18} className="text-[#a4cdec] transition-colors duration-300 group-hover:text-[#18344b]" />
+                    <span className="font-bold transition-colors duration-300 group-hover:text-[#18344b]">{btn2Text}</span>
+                  </Link>
+                )}
+              </motion.div>
+            )}
 
             {/* Trust Badges */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.4 }}
-              className="mt-5 hidden sm:flex flex-wrap items-center gap-5 border-t border-white/20 pt-4 text-xs font-semibold text-[#FDFBD4] drop-shadow-[0_1px_4px_rgba(0,0,0,0.7)]"
+              className="mt-6 hidden sm:flex flex-wrap items-center gap-6 border-t border-white/20 pt-4 text-xs sm:text-sm font-semibold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]"
             >
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 size={16} className="text-[#FBBF24] shrink-0" />
-                <span>ISO 13485 Certified</span>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={18} className="text-[#60a5fa] shrink-0" />
+                <span className="text-white">ISO 13485 Certified</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 size={16} className="text-[#FBBF24] shrink-0" />
-                <span>24/7 SLA Field Support</span>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={18} className="text-[#60a5fa] shrink-0" />
+                <span className="text-white">24/7 SLA Field Support</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 size={16} className="text-[#FBBF24] shrink-0" />
-                <span>NABL Traceable QC</span>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={18} className="text-[#60a5fa] shrink-0" />
+                <span className="text-white">NABL Traceable QC</span>
               </div>
             </motion.div>
           </div>
@@ -345,15 +358,15 @@ export default function HeroCarousel({
 
         {/* Carousel Floating Controls Bar */}
         {slides.length > 1 && (
-          <div className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 z-30 flex items-center gap-2 sm:gap-3">
+          <div className="absolute bottom-5 right-5 sm:bottom-8 sm:right-8 z-30 flex items-center gap-2 sm:gap-3">
             {/* Auto-play toggle */}
             <button
               type="button"
               onClick={() => setIsPlaying(!isPlaying)}
               title={isPlaying ? "Pause Slideshow" : "Play Slideshow"}
-              className="hidden sm:flex h-9 w-9 items-center justify-center rounded-xl bg-black/60 text-white backdrop-blur-md border border-white/30 hover:bg-black/85 transition-all shadow-md"
+              className="hidden sm:flex h-10 w-10 items-center justify-center rounded-2xl bg-black/60 text-white backdrop-blur-md border border-white/30 hover:bg-[#245d8e] hover:border-[#245d8e] transition-all shadow-lg"
             >
-              {isPlaying ? <Pause size={14} /> : <Play size={14} />}
+              {isPlaying ? <Pause size={16} className="text-white" /> : <Play size={16} className="text-white" />}
             </button>
 
             {/* Prev Button */}
@@ -361,19 +374,19 @@ export default function HeroCarousel({
               type="button"
               onClick={handlePrev}
               title="Previous Slide"
-              className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl sm:rounded-2xl bg-black/60 text-white backdrop-blur-md border border-white/30 hover:bg-[#C05800] hover:border-[#C05800] transition-all shadow-md"
+              className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-black/60 text-white backdrop-blur-md border border-white/30 hover:bg-[#245d8e] hover:border-[#245d8e] transition-all shadow-lg"
             >
-              <ChevronLeft size={18} />
+              <ChevronLeft size={20} className="text-white" />
             </button>
 
             {/* Counter Badge */}
-            <div className="flex items-center gap-1.5 rounded-xl bg-black/70 px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-bold text-[#FDFBD4] backdrop-blur-md border border-white/30 shadow-md">
+            <div className="flex items-center gap-1.5 rounded-2xl bg-black/70 px-3.5 py-2 text-xs font-bold text-white backdrop-blur-md border border-white/30 shadow-lg">
               {activeMedia?.type === "video" ? (
-                <Film size={12} className="text-[#FBBF24]" />
+                <Film size={14} className="text-[#60a5fa]" />
               ) : (
-                <ImageIcon size={12} className="text-[#FBBF24]" />
+                <ImageIcon size={14} className="text-[#60a5fa]" />
               )}
-              <span>
+              <span className="text-white">
                 {currentSlide + 1} / {slides.length}
               </span>
             </div>
@@ -383,27 +396,26 @@ export default function HeroCarousel({
               type="button"
               onClick={handleNext}
               title="Next Slide"
-              className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl sm:rounded-2xl bg-black/60 text-white backdrop-blur-md border border-white/30 hover:bg-[#C05800] hover:border-[#C05800] transition-all shadow-md"
+              className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-black/60 text-white backdrop-blur-md border border-white/30 hover:bg-[#245d8e] hover:border-[#245d8e] transition-all shadow-lg"
             >
-              <ChevronRight size={18} />
+              <ChevronRight size={20} className="text-white" />
             </button>
           </div>
         )}
 
         {/* Bottom Pagination Dots */}
         {slides.length > 1 && (
-          <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6 z-30 flex items-center gap-1.5 sm:gap-2">
+          <div className="absolute bottom-5 left-5 sm:bottom-8 sm:left-8 z-30 flex items-center gap-2">
             {slides.map((_, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={() => setCurrentSlide(idx)}
                 aria-label={`Go to slide ${idx + 1}`}
-                className={`transition-all duration-300 rounded-full h-2 sm:h-2.5 ${
-                  currentSlide === idx
-                    ? "w-6 sm:w-8 bg-[#FBBF24] shadow-md shadow-[#FBBF24]/60"
-                    : "w-2 sm:w-2.5 bg-white/60 hover:bg-white"
-                }`}
+                className={`transition-all duration-300 rounded-full h-2.5 ${currentSlide === idx
+                  ? "w-8 bg-[#4f8fc2] shadow-lg shadow-[#4f8fc2]/70"
+                  : "w-2.5 bg-white/60 hover:bg-white"
+                  }`}
               />
             ))}
           </div>
