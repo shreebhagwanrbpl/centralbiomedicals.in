@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { doc, getDoc } from "@/lib/client-api";
+import { db } from "@/lib/client-api";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -58,7 +58,7 @@ export default function Footer() {
             setContactInfo(snap.data().contactInfo || []);
           }
         } catch (contactErr) {
-          console.error("Error loading footer contact:", contactErr);
+          console.warn("Could not load dynamic footer contact:", contactErr?.message || contactErr);
         }
 
         // 2. Fetch Dynamic Product Categories
@@ -74,7 +74,7 @@ export default function Footer() {
             setCategories(Array.from(catSet));
           }
         } catch (prodErr) {
-          console.error("Error loading footer categories:", prodErr);
+          console.warn("Could not load dynamic footer categories:", prodErr?.message || prodErr);
         }
       } finally {
         if (isMounted) setLoading(false);
@@ -159,16 +159,9 @@ export default function Footer() {
     ? `${districtData.district}, ${districtData.state}, India`
     : rawAddress;
 
-  // Fallback list of top categories if database has none yet
+  // Dynamic list of categories from catalog
   const displayCategories = useMemo(() => {
-    if (categories.length > 0) return categories.slice(0, 6);
-    return [
-      "Diagnostic Analyzers",
-      "Molecular Diagnostics",
-      "Hospital & ICU Gear",
-      "Laboratory Equipment",
-      "Reagents & Consumables",
-    ];
+    return categories.slice(0, 8);
   }, [categories]);
 
   if (loading) {
@@ -275,29 +268,31 @@ export default function Footer() {
           </div>
 
           {/* Dynamic Categories */}
-          <div>
-            <h3 className="mb-5 text-lg font-bold text-[#18344b]">
-              Product Categories
-            </h3>
-            <div className="flex flex-col gap-2.5 text-sm font-medium">
-              {displayCategories.map((cat, idx) => (
+          {displayCategories.length > 0 && (
+            <div>
+              <h3 className="mb-5 text-lg font-bold text-[#18344b]">
+                Product Categories
+              </h3>
+              <div className="flex flex-col gap-2.5 text-sm font-medium">
+                {displayCategories.map((cat, idx) => (
+                  <Link
+                    key={idx}
+                    href={makeLink(`/items?category=${encodeURIComponent(cat)}`)}
+                    className="text-[#536e84] transition-all duration-300 hover:translate-x-1.5 hover:text-[#245d8e] flex items-center gap-1.5"
+                  >
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#245d8e]" />
+                    <span className="truncate">{cat}</span>
+                  </Link>
+                ))}
                 <Link
-                  key={idx}
-                  href={makeLink(`/items?category=${encodeURIComponent(cat)}`)}
-                  className="text-[#536e84] transition-all duration-300 hover:translate-x-1.5 hover:text-[#245d8e] flex items-center gap-1.5"
+                  href={makeLink("/items")}
+                  className="mt-2 text-xs font-bold text-[#245d8e] hover:underline"
                 >
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#245d8e]" />
-                  <span className="truncate">{cat}</span>
+                  View Full Catalog →
                 </Link>
-              ))}
-              <Link
-                href={makeLink("/items")}
-                className="mt-2 text-xs font-bold text-[#245d8e] hover:underline"
-              >
-                View Full Catalog →
-              </Link>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Contact Info - Purely Dynamic from Firestore */}
           <div>
@@ -354,9 +349,30 @@ export default function Footer() {
               )}
 
               {!dynamicAddress && phones.length === 0 && emails.length === 0 && (
-                <p className="text-xs text-[#536e84]">
-                  Contact info will appear here once configured in the Admin panel.
-                </p>
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#e9f3fa] text-[#245d8e]">
+                      <MapPin size={18} className="text-[#245d8e]" />
+                    </div>
+                    <p className="leading-6 text-sm">Industrial Biomedical Zone, India</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#e9f3fa] text-[#245d8e]">
+                      <Phone size={18} className="text-[#245d8e]" />
+                    </div>
+                    <a href="tel:+918002466334" className="hover:text-[#245d8e] transition-colors font-semibold text-sm leading-6">
+                      +91 (800) 246-6334
+                    </a>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#e9f3fa] text-[#245d8e]">
+                      <Mail size={18} className="text-[#245d8e]" />
+                    </div>
+                    <a href="mailto:support@centralbiomedicals.in" className="hover:text-[#245d8e] transition-colors font-semibold text-sm leading-6 break-all">
+                      support@centralbiomedicals.in
+                    </a>
+                  </div>
+                </div>
               )}
             </div>
           </div>

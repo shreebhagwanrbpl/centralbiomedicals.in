@@ -22,8 +22,8 @@ import {
     getDoc,
     addDoc,
     collection,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
+} from "@/lib/client-api";
+import { db } from "@/lib/client-api";
 
 const loadImageBase64 = async (src) => {
     try {

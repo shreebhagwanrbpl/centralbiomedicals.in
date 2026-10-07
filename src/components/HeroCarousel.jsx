@@ -210,7 +210,7 @@ export default function HeroCarousel({
     <section className="relative overflow-hidden bg-[#07131e] text-white">
       {/* Background Media Viewport with Immersive Zoom & Crystal Clear Contrast */}
       <div
-        className="relative w-full h-[420px] sm:h-[480px] md:h-[540px] lg:h-[600px] overflow-hidden"
+        className="relative w-full h-[360px] sm:h-[420px] md:h-[460px] lg:h-[500px] overflow-hidden"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -260,16 +260,16 @@ export default function HeroCarousel({
         <div className="absolute inset-0 bg-gradient-to-t from-[#07131e]/90 via-transparent to-[#07131e]/50 z-10" />
 
         {/* Foreground Content Container */}
-        <div className="container-custom relative z-20 h-full flex flex-col justify-center py-8 sm:py-12">
+        <div className="container-custom relative z-20 h-full flex flex-col justify-center py-6 sm:py-8">
           <div className="max-w-2xl lg:max-w-3xl">
             {/* Top Badge */}
             <motion.div
               initial={{ opacity: 0, y: -15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 rounded-full border border-[#4f8fc2]/50 bg-[#245d8e]/90 px-4 py-1.5 text-xs sm:text-sm font-extrabold uppercase tracking-wider text-white shadow-lg backdrop-blur-md"
+              className="inline-flex items-center gap-2 rounded-full border border-[#4f8fc2]/50 bg-[#245d8e]/90 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-lg backdrop-blur-md"
             >
-              <Sparkles size={15} className="text-[#a4cdec] animate-pulse" />
+              <Sparkles size={14} className="text-[#a4cdec] animate-pulse" />
               <span className="text-white">
                 {locationTitle
                   ? `Leading Biomedical Supplier in ${locationTitle}`
@@ -284,7 +284,7 @@ export default function HeroCarousel({
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
-                className="mt-4 text-3xl font-black tracking-tight !text-white sm:text-4xl md:text-5xl lg:text-6xl leading-[1.15] drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)]"
+                className="mt-3 text-2xl font-black tracking-tight !text-white sm:text-3xl md:text-4xl lg:text-5xl leading-[1.15] drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)]"
               >
                 {heroTitle}
               </motion.h1>
@@ -297,7 +297,7 @@ export default function HeroCarousel({
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
-                className="mt-3.5 text-sm sm:text-base md:text-lg leading-relaxed !text-[#eef5fa] max-w-2xl font-medium line-clamp-3 md:line-clamp-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]"
+                className="mt-2.5 text-xs sm:text-sm md:text-base leading-relaxed !text-[#eef5fa] max-w-2xl font-medium line-clamp-2 md:line-clamp-3 drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]"
               >
                 {heroDescription}
               </motion.p>
@@ -309,24 +309,24 @@ export default function HeroCarousel({
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
-                className="mt-6 sm:mt-8 flex flex-wrap items-center gap-4"
+                className="mt-5 sm:mt-6 flex flex-wrap items-center gap-3 sm:gap-4"
               >
                 {btn1Text && (
                   <Link
                     href={btn1Href}
-                    className="group inline-flex items-center justify-center gap-2 rounded-2xl bg-[#245d8e] px-7 py-3.5 text-sm sm:text-base font-bold text-white shadow-xl shadow-[#245d8e]/40 transition-all duration-300 hover:bg-[#183e60] hover:scale-105 hover:shadow-2xl border border-[#4f8fc2]/50"
+                    className="group inline-flex items-center justify-center gap-2 rounded-xl bg-[#245d8e] px-5 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-bold text-white shadow-xl shadow-[#245d8e]/40 transition-all duration-300 hover:bg-[#183e60] hover:scale-105 hover:shadow-2xl border border-[#4f8fc2]/50"
                   >
                     <span className="text-white font-bold">{btn1Text}</span>
-                    <ArrowRight size={18} className="text-white transition-transform duration-300 group-hover:translate-x-1" />
+                    <ArrowRight size={16} className="text-white transition-transform duration-300 group-hover:translate-x-1" />
                   </Link>
                 )}
 
                 {btn2Text && (
                   <Link
                     href={btn2Href}
-                    className="group inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-white/70 bg-white/15 px-7 py-3.5 text-sm sm:text-base font-bold text-white backdrop-blur-md shadow-lg transition-all duration-300 hover:bg-white hover:text-[#18344b] hover:border-white hover:scale-105"
+                    className="group inline-flex items-center justify-center gap-2 rounded-xl border-2 border-white/70 bg-white/15 px-5 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-bold text-white backdrop-blur-md shadow-lg transition-all duration-300 hover:bg-white hover:text-[#18344b] hover:border-white hover:scale-105"
                   >
-                    <PhoneCall size={18} className="text-[#a4cdec] transition-colors duration-300 group-hover:text-[#18344b]" />
+                    <PhoneCall size={16} className="text-[#a4cdec] transition-colors duration-300 group-hover:text-[#18344b]" />
                     <span className="font-bold transition-colors duration-300 group-hover:text-[#18344b]">{btn2Text}</span>
                   </Link>
                 )}
@@ -338,18 +338,18 @@ export default function HeroCarousel({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.4 }}
-              className="mt-6 hidden sm:flex flex-wrap items-center gap-6 border-t border-white/20 pt-4 text-xs sm:text-sm font-semibold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]"
+              className="mt-4 hidden sm:flex flex-wrap items-center gap-5 border-t border-white/20 pt-3 text-xs font-semibold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]"
             >
-              <div className="flex items-center gap-2">
-                <CheckCircle2 size={18} className="text-[#60a5fa] shrink-0" />
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 size={16} className="text-[#60a5fa] shrink-0" />
                 <span className="text-white">ISO 13485 Certified</span>
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 size={18} className="text-[#60a5fa] shrink-0" />
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 size={16} className="text-[#60a5fa] shrink-0" />
                 <span className="text-white">24/7 SLA Field Support</span>
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 size={18} className="text-[#60a5fa] shrink-0" />
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 size={16} className="text-[#60a5fa] shrink-0" />
                 <span className="text-white">NABL Traceable QC</span>
               </div>
             </motion.div>

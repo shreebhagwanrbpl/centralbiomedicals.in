@@ -6,7 +6,7 @@ import PageBanner from "@/components/PageBanner";
 import SectionTitle from "@/components/SectionTitle";
 import ProductCard from "@/components/ProductCard";
 import { fetchAllDynamicProducts, normalizeProduct } from "@/lib/fetchProducts";
-import { subscribeToCatalog } from "@/lib/data-fetcher";
+import { subscribeToCatalog } from "@/lib/client-api";
 import { Search, X, Filter, Package, ShieldCheck, ArrowRight, Loader2 } from "lucide-react";
 
 function ProductsContent({ city }) {

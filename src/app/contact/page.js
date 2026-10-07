@@ -2,8 +2,8 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { doc, getDoc } from "@/lib/client-api";
+import { db } from "@/lib/client-api";
 import PageBanner from "@/components/PageBanner";
 import SectionTitle from "@/components/SectionTitle";
 import ContactForm from "@/components/ContactForm";
@@ -40,6 +40,13 @@ const faqs = [
   },
 ];
 
+const fallbackContactInfo = [
+  { label: "Headquarters & Logistics", value: "Biomedical Industrial Zone, India" },
+  { label: "Direct Helpline / WhatsApp", value: "+91 (800) 246-6334" },
+  { label: "Official Support Email", value: "support@centralbiomedicals.in" },
+  { label: "Working Hours", value: "Mon – Sat: 9:00 AM – 7:00 PM (24/7 Emergency Support)" },
+];
+
 export default function ContactPage() {
   const [districtData, setDistrictData] = useState(null);
   const [contactInfo, setContactInfo] = useState([]);
@@ -60,11 +67,14 @@ export default function ContactPage() {
         const snap = await getDoc(
           doc(db, "websites", "centralbiomedicalsin", "pages", "contact")
         );
-        if (snap.exists()) {
-          setContactInfo(snap.data().contactInfo || []);
+        if (snap.exists() && snap.data().contactInfo?.length > 0) {
+          setContactInfo(snap.data().contactInfo);
+        } else {
+          setContactInfo(fallbackContactInfo);
         }
       } catch (err) {
-        console.error("Error loading contact data:", err);
+        console.warn("Could not load dynamic contact, using fallback:", err?.message || err);
+        setContactInfo(fallbackContactInfo);
       } finally {
         setLoading(false);
       }

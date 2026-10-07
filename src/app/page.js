@@ -4,8 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { doc, getDoc, collection, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { doc, getDoc, collection, getDocs } from "@/lib/client-api";
+import { db } from "@/lib/client-api";
 import { motion } from "framer-motion";
 import {
   Microscope,
@@ -33,6 +33,7 @@ import ProductCard from "@/components/ProductCard";
 import ContactForm from "@/components/ContactForm";
 import HeroCarousel from "@/components/HeroCarousel";
 import { fetchAllDynamicProducts } from "@/lib/fetchProducts";
+import { fallbackServices } from "@/data/servicesData";
 
 const stats = [
   {
@@ -170,13 +171,13 @@ export default function Home({ city }) {
           );
           if (serviceSnap.exists() && serviceSnap.data().services?.length > 0) {
             const validServices = serviceSnap.data().services.filter((s) => s.title || s.desc);
-            setServices(validServices);
+            setServices(validServices.length > 0 ? validServices : fallbackServices);
           } else {
-            setServices([]);
+            setServices(fallbackServices);
           }
         } catch (serviceErr) {
-          console.error("Error fetching services:", serviceErr);
-          setServices([]);
+          console.warn("Using fallback services:", serviceErr?.message || serviceErr);
+          setServices(fallbackServices);
         }
 
         // Fetch products dynamically from Firestore
@@ -188,11 +189,11 @@ export default function Home({ city }) {
             setProducts([]);
           }
         } catch (prodErr) {
-          console.error("Error fetching products:", prodErr);
+          console.warn("Using fallback products:", prodErr?.message || prodErr);
           setProducts([]);
         }
       } catch (err) {
-        console.error("Error in home data fetch:", err);
+        console.warn("Error in home data fetch:", err?.message || err);
       } finally {
         setLoading(false);
       }

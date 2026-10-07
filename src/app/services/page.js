@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { doc, getDoc } from "@/lib/client-api";
+import { db } from "@/lib/client-api";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import PageBanner from "@/components/PageBanner";
@@ -23,6 +23,8 @@ import {
   Cpu,
   Info,
 } from "lucide-react";
+
+import { fallbackServices } from "@/data/servicesData";
 
 const workflowSteps = [
   {
@@ -99,17 +101,17 @@ export default function ServicesPage() {
               turnaround: s.turnaround || "",
               highlights: s.highlights || [],
             }));
-          setServices(dbServices);
+          setServices(dbServices.length > 0 ? dbServices : fallbackServices);
         } else {
-          setServices([]);
+          setServices(fallbackServices);
         }
 
         if (contactSnap.exists()) {
           setContactInfo(contactSnap.data().contactInfo || []);
         }
       } catch (error) {
-        console.error("Error loading services/contact data:", error);
-        setServices([]);
+        console.warn("Could not load dynamic services, using fallback:", error?.message || error);
+        setServices(fallbackServices);
       } finally {
         setLoading(false);
       }
@@ -148,12 +150,7 @@ export default function ServicesPage() {
       {/* Services Grid Section */}
       <section className="section-padding bg-gradient-to-b from-white via-[#f0f6fb] to-white">
         <div className="container-custom">
-          <SectionTitle
-            badge="Full Service Catalog"
-            title="Designed Around Reliable Operations"
-            description="Explore our specialized services designed to keep clinical laboratories and hospital departments operating at peak accuracy."
-            center
-          />
+
 
           {loading ? (
             <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-3">

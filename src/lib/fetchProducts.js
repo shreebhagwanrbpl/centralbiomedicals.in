@@ -1,118 +1,36 @@
-import { db } from "@/lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
-import { fallbackProducts, makeSlug } from "@/data/productsData";
-import { fetchFullCatalog } from "@/lib/data-fetcher";
+"use client";
 
-/**
- * Standardizes raw Firestore product/item document object to standard shape
- */
+import { makeSlug, WEBSITE_ID } from "@/lib/catalog-utils";
+
 export function normalizeProduct(item, defaultCategory = "Diagnostic Equipment") {
   if (!item || typeof item !== "object") return null;
-
-  const title = (item.title || item.name || item.productName || item.itemName || "").trim();
+  const title = String(item.title || item.name || item.productName || item.itemName || "").trim();
   if (!title) return null;
-
   const rawSlug = item.slug || item.productSlug || item.itemSlug || makeSlug(title);
-  const category = item.category || item.categoryName || defaultCategory || "Diagnostic Equipment";
+  const category = item.category || item.categoryName || defaultCategory;
   const subCategory = item.subCategory || item["sub category"] || item.subCategoryName || "";
-
-  const description =
-    item.desc ||
-    item.description ||
-    item.detail ||
-    item.summary ||
-    "";
-
-  const image =
-    item.image ||
-    item.imgUrl ||
-    item.imageUrl ||
-    (Array.isArray(item.images) && item.images[0]) ||
-    "";
-
-  let images = Array.isArray(item.images) && item.images.length > 0 ? item.images : image ? [image] : [];
-
-  let features = Array.isArray(item.features)
-    ? item.features.filter(Boolean)
-    : typeof item.features === "string"
-      ? item.features.split(",").map((f) => f.trim()).filter(Boolean)
-      : [];
-
-  return {
-    ...item,
-    id: item.uid || item.id || item.categoryProductId || rawSlug,
-    categoryProductId: item.categoryProductId || "",
-    title,
-    slug: rawSlug,
-    category,
-    subCategory,
-    description,
-    desc: description,
-    price: item.price || "",
-    capacity: item.capacity || "",
-    throughput: item.throughput || "",
-    instrument: item.instrument || "",
-    model: item.model || "",
-    usage: item.usage || "",
-    brand: item.brand || "",
-    parameters: item.parameters || "",
-    automation: item.automation || "",
-    availability: item.availability || item.status || "",
-    size: item.size || "",
-    features,
-    specs: item.specs && typeof item.specs === "object" ? item.specs : null,
-    badge: item.badge || item.tag || "",
-    status: item.status || item.availability || "In Stock",
-    image,
-    images,
-    video: item.video || "",
-    pdf: item.pdf || "",
-    isPublished: item.isPublished !== false,
-  };
+  const description = item.desc || item.description || item.detail || item.summary || "";
+  const image = item.image || item.imgUrl || item.imageUrl || (Array.isArray(item.images) ? item.images[0] : "") || "";
+  const images = Array.isArray(item.images) && item.images.length ? item.images : image ? [image] : [];
+  const features = Array.isArray(item.features) ? item.features.filter(Boolean) : typeof item.features === "string" ? item.features.split(",").map(f=>f.trim()).filter(Boolean) : [];
+  return { ...item, id:item.uid||item.id||item.categoryProductId||rawSlug, categoryProductId:item.categoryProductId||"", title, slug:rawSlug, category, subCategory, description, desc:description, price:item.price||"", capacity:item.capacity||"", throughput:item.throughput||"", instrument:item.instrument||"", model:item.model||"", usage:item.usage||"", brand:item.brand||"", parameters:item.parameters||"", automation:item.automation||"", availability:item.availability||item.status||"", size:item.size||"", features, specs:item.specs&&typeof item.specs==="object"?item.specs:null, badge:item.badge||item.tag||"", status:item.status||item.availability||"In Stock", image, images, video:item.video||"", pdf:item.pdf||"", isPublished:item.isPublished!==false };
 }
 
-/**
- * Fetches dynamic products from all possible Firestore locations used by admin panel
- */
 export async function fetchAllDynamicProducts() {
-  const productsMap = new Map();
-
-  const addItems = (itemsArray, defaultCat) => {
-    if (!Array.isArray(itemsArray)) return;
-    itemsArray.forEach((raw) => {
-      const p = normalizeProduct(raw, defaultCat);
-      if (p && p.slug && !productsMap.has(p.slug)) {
-        productsMap.set(p.slug, p);
-      }
-    });
-  };
-
   try {
-    // 1. Fetch full catalog via data-fetcher (subcategories, category products, legacy products)
-    const fullCatalog = await fetchFullCatalog();
-    if (Array.isArray(fullCatalog) && fullCatalog.length > 0) {
-      addItems(fullCatalog);
+    const response = await fetch(`/api/catalog?websiteId=${encodeURIComponent(WEBSITE_ID)}`, { cache: "no-store" });
+    if (!response.ok) return [];
+    const body = await response.json();
+    if (body?.success === false && (!body.products || body.products.length === 0)) return [];
+    const raw = body?.products ?? body?.data?.products ?? body?.data ?? body;
+    const map = new Map();
+    for (const item of Array.isArray(raw) ? raw : []) {
+      const p = normalizeProduct(item);
+      if (p && p.slug && !map.has(p.slug)) map.set(p.slug, p);
     }
-
-    // 2. Fetch extra fallback collections if any
-    const extraSnapshots = await Promise.allSettled([
-      getDocs(collection(db, "websites", "centralbiomedicalsin", "products")),
-      getDocs(collection(db, "websites", "centralbiomedicalsin", "items")),
-      getDocs(collection(db, "products")),
-      getDocs(collection(db, "items")),
-    ]);
-
-    extraSnapshots.forEach((res) => {
-      if (res.status === "fulfilled" && !res.value.empty) {
-        res.value.forEach((docSnap) => {
-          addItems([{ id: docSnap.id, ...docSnap.data() }]);
-        });
-      }
-    });
+    return [...map.values()];
   } catch (err) {
-    console.error("Error fetching dynamic products from Firestore:", err);
+    console.warn("Could not fetch dynamic products:", err?.message || err);
+    return [];
   }
-
-  const fetchedList = Array.from(productsMap.values());
-  return fetchedList;
 }
