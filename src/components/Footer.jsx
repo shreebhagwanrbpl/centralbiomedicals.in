@@ -8,7 +8,8 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Mail, Phone, MapPin, ArrowRight } from "lucide-react";
 import { FaFacebook, FaInstagram } from "react-icons/fa";
-import { fetchAllDynamicProducts } from "@/lib/fetchProducts";
+import { fetchAllDynamicProducts, fetchAllDynamicCategories } from "@/lib/fetchProducts";
+import { subscribeToCatalog } from "@/lib/client-api";
 
 export default function Footer() {
   const [contactInfo, setContactInfo] = useState([]);
@@ -49,7 +50,7 @@ export default function Footer() {
 
     const loadData = async () => {
       try {
-        // 1. Fetch Contact Info
+        // 1. Fetch Contact Info (Strictly dynamic)
         try {
           const snap = await getDoc(
             doc(db, "websites", "centralbiomedicalsin", "pages", "contact")
@@ -63,15 +64,20 @@ export default function Footer() {
 
         // 2. Fetch Dynamic Product Categories
         try {
-          const prods = await fetchAllDynamicProducts();
-          if (isMounted && Array.isArray(prods) && prods.length > 0) {
-            const catSet = new Set();
-            prods.forEach((p) => {
-              if (p.category && String(p.category).trim() && String(p.category).trim() !== "All Categories") {
-                catSet.add(String(p.category).trim());
-              }
-            });
-            setCategories(Array.from(catSet));
+          const cats = await fetchAllDynamicCategories();
+          if (isMounted && Array.isArray(cats) && cats.length > 0) {
+            setCategories(cats);
+          } else {
+            const prods = await fetchAllDynamicProducts();
+            if (isMounted && Array.isArray(prods) && prods.length > 0) {
+              const catSet = new Set();
+              prods.forEach((p) => {
+                if (p.category && String(p.category).trim() && String(p.category).trim() !== "All Categories") {
+                  catSet.add(String(p.category).trim());
+                }
+              });
+              setCategories(Array.from(catSet));
+            }
           }
         } catch (prodErr) {
           console.warn("Could not load dynamic footer categories:", prodErr?.message || prodErr);
@@ -83,8 +89,25 @@ export default function Footer() {
 
     loadData();
 
+    // Subscribe to real-time catalog changes
+    const unsubscribe = subscribeToCatalog((updatedCatalog) => {
+      if (isMounted && Array.isArray(updatedCatalog) && updatedCatalog.length > 0) {
+        const catSet = new Set();
+        updatedCatalog.forEach((p) => {
+          const cat = p?.category || p?.categoryName;
+          if (cat && String(cat).trim() && String(cat).trim() !== "All Categories") {
+            catSet.add(String(cat).trim());
+          }
+        });
+        if (catSet.size > 0) {
+          setCategories(Array.from(catSet));
+        }
+      }
+    });
+
     return () => {
       isMounted = false;
+      if (unsubscribe) unsubscribe();
     };
   }, []);
 
@@ -192,7 +215,7 @@ export default function Footer() {
   return (
     <footer className="border-t border-[#d0e2f2] bg-gradient-to-b from-white via-[#f0f6fb] to-[#e9f3fa]">
       <div className="container-custom py-14 sm:py-16">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+        <div className={`grid gap-10 sm:grid-cols-2 ${displayCategories.length > 0 ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
           {/* Company & Social */}
           <div className="flex flex-col justify-between">
             <div>
@@ -348,30 +371,15 @@ export default function Footer() {
                 </div>
               )}
 
+              {/* Dynamic contact items only - no static fallbacks */}
               {!dynamicAddress && phones.length === 0 && emails.length === 0 && (
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#e9f3fa] text-[#245d8e]">
-                      <MapPin size={18} className="text-[#245d8e]" />
-                    </div>
-                    <p className="leading-6 text-sm">Industrial Biomedical Zone, India</p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#e9f3fa] text-[#245d8e]">
-                      <Phone size={18} className="text-[#245d8e]" />
-                    </div>
-                    <a href="tel:+918002466334" className="hover:text-[#245d8e] transition-colors font-semibold text-sm leading-6">
-                      +91 (800) 246-6334
-                    </a>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#e9f3fa] text-[#245d8e]">
-                      <Mail size={18} className="text-[#245d8e]" />
-                    </div>
-                    <a href="mailto:support@centralbiomedicals.in" className="hover:text-[#245d8e] transition-colors font-semibold text-sm leading-6 break-all">
-                      support@centralbiomedicals.in
-                    </a>
-                  </div>
+                <div className="text-sm text-[#536e84]">
+                  <Link
+                    href={makeLink("/contact")}
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#245d8e] hover:underline"
+                  >
+                    <span>Contact & Support Page →</span>
+                  </Link>
                 </div>
               )}
             </div>

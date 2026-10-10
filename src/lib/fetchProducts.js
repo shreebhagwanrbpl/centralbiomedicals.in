@@ -34,3 +34,38 @@ export async function fetchAllDynamicProducts() {
     return [];
   }
 }
+
+export async function fetchAllDynamicCategories() {
+  try {
+    const response = await fetch(`/api/catalog?websiteId=${encodeURIComponent(WEBSITE_ID)}`, { cache: "no-store" });
+    if (!response.ok) return [];
+    const body = await response.json();
+    const categoriesList = [];
+
+    // 1. Direct categories array if returned by admin
+    if (Array.isArray(body?.categories) && body.categories.length > 0) {
+      body.categories.forEach((c) => {
+        const name = typeof c === "string" ? c : c?.name || c?.title || c?.category;
+        if (name && String(name).trim() && String(name).trim() !== "All Categories") {
+          categoriesList.push(String(name).trim());
+        }
+      });
+    }
+
+    // 2. Derive from products array
+    const raw = body?.products ?? body?.data?.products ?? body?.data ?? body;
+    if (Array.isArray(raw) && raw.length > 0) {
+      raw.forEach((item) => {
+        const cat = item?.category || item?.categoryName;
+        if (cat && String(cat).trim() && String(cat).trim() !== "All Categories") {
+          categoriesList.push(String(cat).trim());
+        }
+      });
+    }
+
+    return Array.from(new Set(categoriesList));
+  } catch (err) {
+    console.warn("Could not fetch dynamic categories:", err?.message || err);
+    return [];
+  }
+}

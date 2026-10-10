@@ -40,13 +40,6 @@ const faqs = [
   },
 ];
 
-const fallbackContactInfo = [
-  { label: "Headquarters & Logistics", value: "Biomedical Industrial Zone, India" },
-  { label: "Direct Helpline / WhatsApp", value: "+91 (800) 246-6334" },
-  { label: "Official Support Email", value: "support@centralbiomedicals.in" },
-  { label: "Working Hours", value: "Mon – Sat: 9:00 AM – 7:00 PM (24/7 Emergency Support)" },
-];
-
 export default function ContactPage() {
   const [districtData, setDistrictData] = useState(null);
   const [contactInfo, setContactInfo] = useState([]);
@@ -70,11 +63,11 @@ export default function ContactPage() {
         if (snap.exists() && snap.data().contactInfo?.length > 0) {
           setContactInfo(snap.data().contactInfo);
         } else {
-          setContactInfo(fallbackContactInfo);
+          setContactInfo([]);
         }
       } catch (err) {
-        console.warn("Could not load dynamic contact, using fallback:", err?.message || err);
-        setContactInfo(fallbackContactInfo);
+        console.warn("Could not load dynamic contact:", err?.message || err);
+        setContactInfo([]);
       } finally {
         setLoading(false);
       }

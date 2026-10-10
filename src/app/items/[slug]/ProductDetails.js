@@ -429,7 +429,7 @@ export default function ProductDetails({ slug }) {
                 return l.includes("phone") || l.includes("mobile") || l.includes("tel") || l.includes("contact");
             });
             const rawPhones = phoneItems.flatMap((i) => (Array.isArray(i.value) ? i.value : [i.value])).filter(Boolean);
-            const phoneString = rawPhones.length > 0 ? rawPhones.slice(0, 2).join(", ") : "+91 8318368383, +91 9983123469";
+            const phoneString = rawPhones.length > 0 ? rawPhones.slice(0, 2).join(", ") : "";
 
             const emailItem = contactInfo.find((item) => {
                 const l = (item?.label || "").toLowerCase();
@@ -439,11 +439,11 @@ export default function ProductDetails({ slug }) {
                 ? Array.isArray(emailItem.value)
                     ? emailItem.value[0]
                     : emailItem.value
-                : "mail@centralbiomedicals.in";
+                : "";
 
             pdfDoc.text(`Website: ${websiteText}`, 135, 19);
-            pdfDoc.text(`Email: ${emailText}`, 135, 24);
-            pdfDoc.text(`Phone: ${phoneString}`, 135, 29);
+            if (emailText) pdfDoc.text(`Email: ${emailText}`, 135, 24);
+            if (phoneString) pdfDoc.text(`Phone: ${phoneString}`, 135, emailText ? 29 : 24);
 
             pdfDoc.setDrawColor(colorLightBorder[0], colorLightBorder[1], colorLightBorder[2]);
             pdfDoc.setLineWidth(0.6);

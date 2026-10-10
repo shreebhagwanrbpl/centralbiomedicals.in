@@ -16,28 +16,28 @@ import {
   Film,
 } from "lucide-react";
 
-// Default high-quality fallback slides if database has no media configured yet
+// High-quality local biomedical equipment slides
 const FALLBACK_SLIDES = [
   {
     type: "image",
-    url: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=1900&q=80",
+    url: "/images/hero/hero-lab.jpg",
     title: "Precision Medical Equipment & Diagnostic Solutions",
     subtitle:
       "Equipping hospitals, pathology centers, and clinical laboratories with top-tier automated analyzers, NABL-traceable calibration, and 24/7 rapid technical engineering support across India.",
   },
   {
     type: "image",
-    url: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1900&q=80",
-    title: "Automated Clinical Chemistry & Pathology Analyzers",
+    url: "/images/hero/hero-icu.jpg",
+    title: "Critical Care & Hospital ICU Biomedical Equipment",
     subtitle:
-      "High-throughput diagnostic instruments delivering rapid test results with uncompromised quality control and ISO 13485 certified accuracy standards.",
+      "High-precision patient monitors, ventilators, and surgical systems delivering reliable clinical performance with ISO 13485 certified accuracy standards.",
   },
   {
     type: "image",
-    url: "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=1900&q=80",
-    title: "24/7 Biomedical Engineering & AMC Support",
+    url: "/images/hero/hero-imaging.jpg",
+    title: "Advanced Radiology & Diagnostic Imaging Solutions",
     subtitle:
-      "Guaranteed 2-hour emergency repair SLA for critical ICU, OT, and pathology laboratory equipment with genuine OEM parts.",
+      "Modern diagnostic MRI, CT, and automated laboratory testing instruments with 24/7 SLA biomedical engineering and genuine OEM calibration support.",
   },
 ];
 
@@ -208,9 +208,9 @@ export default function HeroCarousel({
 
   return (
     <section className="relative overflow-hidden bg-[#07131e] text-white">
-      {/* Background Media Viewport with Immersive Zoom & Crystal Clear Contrast */}
+      {/* Background Media Viewport - Full Width Edge-to-Edge Banner Images */}
       <div
-        className="relative w-full h-[360px] sm:h-[420px] md:h-[460px] lg:h-[500px] overflow-hidden"
+        className="relative w-full h-[380px] sm:h-[440px] md:h-[480px] lg:h-[520px] overflow-hidden"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -221,18 +221,14 @@ export default function HeroCarousel({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.8, ease: "easeInOut" }}
+            transition={{ duration: 0.6, ease: "easeInOut" }}
             className="absolute inset-0 w-full h-full overflow-hidden"
           >
-            {/* Immersive Ken Burns Zoom Effect */}
             {activeMedia?.type === "video" ? (
-              <motion.video
-                initial={{ scale: 1 }}
-                animate={{ scale: 1.1 }}
-                transition={{ duration: 7, ease: "easeOut" }}
+              <video
                 ref={(el) => (videoRefs.current[currentSlide] = el)}
                 src={activeMedia.url}
-                className="w-full h-full object-cover object-center"
+                className="w-full h-full object-cover object-center opacity-100 brightness-[1.05]"
                 autoPlay
                 loop
                 muted
@@ -240,13 +236,10 @@ export default function HeroCarousel({
                 preload="auto"
               />
             ) : (
-              <motion.img
-                initial={{ scale: 1 }}
-                animate={{ scale: 1.14 }}
-                transition={{ duration: 7, ease: "easeOut" }}
+              <img
                 src={activeMedia?.url}
                 alt={`Hero Slide ${currentSlide + 1}`}
-                className="w-full h-full object-cover object-center brightness-[0.85] contrast-[1.1]"
+                className="w-full h-full object-cover object-center opacity-100 brightness-[1.06] contrast-[1.06]"
                 onError={(e) => {
                   e.target.src = FALLBACK_SLIDES[0].url;
                 }}
@@ -255,9 +248,9 @@ export default function HeroCarousel({
           </motion.div>
         </AnimatePresence>
 
-        {/* Multi-layered Dark Gradient Overlays for 100% Guaranteed High-Contrast Text Legibility */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#07131e]/95 via-[#0c1f30]/85 to-[#16334a]/60 z-10" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#07131e]/90 via-transparent to-[#07131e]/50 z-10" />
+        {/* Crisp, Balanced Gradient Overlays - Optimized so text is 100% readable on left while all 3 products are visible on center/right */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#07131e]/95 via-[#07131e]/75 sm:via-[#07131e]/45 to-transparent/10 z-10 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#07131e]/70 via-transparent to-[#07131e]/20 z-10 pointer-events-none" />
 
         {/* Foreground Content Container */}
         <div className="container-custom relative z-20 h-full flex flex-col justify-center py-6 sm:py-8">
@@ -267,37 +260,39 @@ export default function HeroCarousel({
               initial={{ opacity: 0, y: -15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 rounded-full border border-[#4f8fc2]/50 bg-[#245d8e]/90 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-lg backdrop-blur-md"
+              className="inline-flex items-center gap-2 rounded-full border border-[#38bdf8]/60 bg-[#0c2a47]/95 px-4 py-1 text-xs font-extrabold uppercase tracking-wider text-[#bae6fd] shadow-xl backdrop-blur-md"
             >
-              <Sparkles size={14} className="text-[#a4cdec] animate-pulse" />
-              <span className="text-white">
+              <Sparkles size={14} className="text-[#38bdf8] animate-pulse" />
+              <span className="text-[#e0f2fe] font-bold" style={{ color: "#e0f2fe" }}>
                 {locationTitle
                   ? `Leading Biomedical Supplier in ${locationTitle}`
                   : "Pioneering Biomedical & Diagnostic Innovations"}
               </span>
             </motion.div>
 
-            {/* Main Heading with crisp high-contrast drop-shadow */}
+            {/* Main Heading with 100% guaranteed pure white color & drop-shadow */}
             {heroTitle && (
               <motion.h1
                 key={`title-${currentSlide}-${heroTitle}`}
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
-                className="mt-3 text-2xl font-black tracking-tight !text-white sm:text-3xl md:text-4xl lg:text-5xl leading-[1.15] drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)]"
+                style={{ color: "#ffffff", textShadow: "0 4px 20px rgba(0,0,0,0.95), 0 1px 3px rgba(0,0,0,0.8)" }}
+                className="mt-3 text-2xl font-black tracking-tight !text-white sm:text-3xl md:text-4xl lg:text-5xl leading-[1.15]"
               >
                 {heroTitle}
               </motion.h1>
             )}
 
-            {/* Description with high contrast */}
+            {/* Description with pure white/slate contrast */}
             {heroDescription && (
               <motion.p
                 key={`desc-${currentSlide}-${heroDescription}`}
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
-                className="mt-2.5 text-xs sm:text-sm md:text-base leading-relaxed !text-[#eef5fa] max-w-2xl font-medium line-clamp-2 md:line-clamp-3 drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]"
+                style={{ color: "#f1f5f9", textShadow: "0 2px 10px rgba(0,0,0,0.95)" }}
+                className="mt-2.5 text-xs sm:text-sm md:text-base leading-relaxed !text-slate-100 max-w-2xl font-medium line-clamp-2 md:line-clamp-3"
               >
                 {heroDescription}
               </motion.p>
@@ -314,9 +309,9 @@ export default function HeroCarousel({
                 {btn1Text && (
                   <Link
                     href={btn1Href}
-                    className="group inline-flex items-center justify-center gap-2 rounded-xl bg-[#245d8e] px-5 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-bold text-white shadow-xl shadow-[#245d8e]/40 transition-all duration-300 hover:bg-[#183e60] hover:scale-105 hover:shadow-2xl border border-[#4f8fc2]/50"
+                    className="group inline-flex items-center justify-center gap-2 rounded-xl bg-[#0284c7] hover:bg-[#0369a1] px-5 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-bold text-white shadow-xl shadow-[#0284c7]/40 transition-all duration-300 hover:scale-105 hover:shadow-2xl border border-[#38bdf8]/50"
                   >
-                    <span className="text-white font-bold">{btn1Text}</span>
+                    <span className="text-white font-bold" style={{ color: "#ffffff" }}>{btn1Text}</span>
                     <ArrowRight size={16} className="text-white transition-transform duration-300 group-hover:translate-x-1" />
                   </Link>
                 )}
@@ -324,33 +319,34 @@ export default function HeroCarousel({
                 {btn2Text && (
                   <Link
                     href={btn2Href}
-                    className="group inline-flex items-center justify-center gap-2 rounded-xl border-2 border-white/70 bg-white/15 px-5 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-bold text-white backdrop-blur-md shadow-lg transition-all duration-300 hover:bg-white hover:text-[#18344b] hover:border-white hover:scale-105"
+                    className="group inline-flex items-center justify-center gap-2 rounded-xl border-2 border-white/80 bg-black/40 px-5 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-bold text-white backdrop-blur-md shadow-lg transition-all duration-300 hover:bg-white hover:text-[#0f2d4a] hover:border-white hover:scale-105"
                   >
-                    <PhoneCall size={16} className="text-[#a4cdec] transition-colors duration-300 group-hover:text-[#18344b]" />
-                    <span className="font-bold transition-colors duration-300 group-hover:text-[#18344b]">{btn2Text}</span>
+                    <PhoneCall size={16} className="text-[#38bdf8] transition-colors duration-300 group-hover:text-[#0f2d4a]" />
+                    <span className="font-bold transition-colors duration-300 group-hover:text-[#0f2d4a]" style={{ color: "#ffffff" }}>{btn2Text}</span>
                   </Link>
                 )}
               </motion.div>
             )}
 
-            {/* Trust Badges */}
+            {/* Trust Badges with Bright High-Contrast Colors */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.4 }}
-              className="mt-4 hidden sm:flex flex-wrap items-center gap-5 border-t border-white/20 pt-3 text-xs font-semibold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]"
+              className="mt-4 hidden sm:flex flex-wrap items-center gap-5 border-t border-white/20 pt-3 text-xs font-bold text-white"
+              style={{ color: "#ffffff", textShadow: "0 2px 8px rgba(0,0,0,0.95)" }}
             >
               <div className="flex items-center gap-1.5">
-                <CheckCircle2 size={16} className="text-[#60a5fa] shrink-0" />
-                <span className="text-white">ISO 13485 Certified</span>
+                <CheckCircle2 size={16} className="text-[#38bdf8] shrink-0" />
+                <span className="text-white" style={{ color: "#ffffff" }}>ISO 13485 Certified</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <CheckCircle2 size={16} className="text-[#60a5fa] shrink-0" />
-                <span className="text-white">24/7 SLA Field Support</span>
+                <CheckCircle2 size={16} className="text-[#38bdf8] shrink-0" />
+                <span className="text-white" style={{ color: "#ffffff" }}>24/7 SLA Field Support</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <CheckCircle2 size={16} className="text-[#60a5fa] shrink-0" />
-                <span className="text-white">NABL Traceable QC</span>
+                <CheckCircle2 size={16} className="text-[#38bdf8] shrink-0" />
+                <span className="text-white" style={{ color: "#ffffff" }}>NABL Traceable QC</span>
               </div>
             </motion.div>
           </div>

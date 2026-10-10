@@ -250,23 +250,23 @@ export default function Home({ city }) {
         makeLink={makeLink}
       />
 
-      {/* ================= STATS TICKER ================= */}
-      <section className="bg-gradient-to-r from-[#18344b] via-[#245d8e] to-[#18344b] py-10 text-white shadow-inner">
+      {/* ================= STATS TICKER (WHITE BACKGROUND WITH NAVY/BLUE TEXT) ================= */}
+      <section className="bg-white border-y border-[#d0e2f2] py-8 sm:py-10 shadow-sm">
         <div className="container-custom">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
             {stats.map((item, idx) => {
               const Icon = item.icon;
               return (
-                <div key={idx} className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-[#d0e2f2] border border-white/20">
-                    <Icon size={26} />
+                <div key={idx} className="flex items-center gap-3.5 sm:gap-4">
+                  <div className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl bg-[#e9f3fa] text-[#245d8e] border border-[#d0e2f2] shadow-sm">
+                    <Icon size={24} className="sm:w-[26px] sm:h-[26px]" />
                   </div>
                   <div>
-                    <h3 className="text-2xl sm:text-3xl font-black tracking-tight !text-white">
+                    <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-[#18344b]">
                       {item.number}
                     </h3>
-                    <p className="text-xs sm:text-sm font-bold !text-[#d0e2f2]">{item.title}</p>
-                    <p className="text-[11px] !text-slate-300 hidden sm:block">{item.desc}</p>
+                    <p className="text-xs sm:text-sm font-bold text-[#245d8e]">{item.title}</p>
+                    <p className="text-[11px] sm:text-xs text-[#536e84] hidden sm:block font-medium">{item.desc}</p>
                   </div>
                 </div>
               );

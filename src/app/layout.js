@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -10,7 +13,7 @@ export const metadata = {
   ),
 
   title:
-    "Denim Medical | Biomedical & Diagnostic Equipment",
+    "Raj Biosis | Biomedical & Diagnostic Equipment",
 
   description:
     "Raj Biosis Private Limited (Raj Biomedical) supplies CBC Machines, Hematology Analyzers, Biochemistry Analyzers, ELISA Readers and laboratory equipment across India.",
@@ -29,7 +32,7 @@ export const metadata = {
 
   openGraph: {
     title:
-      "Denim Medical | Biomedical & Diagnostic Equipment",
+      "Raj Biosis | Biomedical & Diagnostic Equipment",
 
     description:
       "Crisp blue utility styling with strong hierarchy for practical equipment buying journeys.",
@@ -55,7 +58,7 @@ export const metadata = {
     card: "summary_large_image",
 
     title:
-      "Denim Medical | Biomedical & Diagnostic Equipment",
+      "Raj Biosis | Biomedical & Diagnostic Equipment",
 
     description:
       "Crisp blue utility styling with strong hierarchy for practical equipment buying journeys.",

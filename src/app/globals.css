@@ -223,7 +223,7 @@ header {
   animation: shimmer 1.8s infinite;
 }
 
-/* UNIQUE UI SYSTEM — VERSION 22 / Denim Medical */
+/* UNIQUE UI SYSTEM — VERSION 22 / Raj Biosis */
 :root {
   --vp: #245d8e;
   --va: #4f8fc2;
@@ -259,14 +259,14 @@ body.variant-22 main {
   background: var(--vb);
 }
 
-body.variant-22 main h1,
-body.variant-22 main h2,
-body.variant-22 main h3,
-body.variant-22 main h4 {
+body.variant-22 main h1:not(.text-white):not([class*="text-white"]),
+body.variant-22 main h2:not(.text-white):not([class*="text-white"]),
+body.variant-22 main h3:not(.text-white):not([class*="text-white"]),
+body.variant-22 main h4:not(.text-white):not([class*="text-white"]) {
   color: var(--vt);
 }
 
-body.variant-22 main p {
+body.variant-22 main p:not(.text-white):not([class*="text-white"]):not([class*="text-slate-"]):not([class*="text-[#"]) {
   color: var(--vm);
 }
 
