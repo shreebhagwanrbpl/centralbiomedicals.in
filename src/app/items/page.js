@@ -2,16 +2,15 @@
 
 import { useEffect, useState, useMemo, Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import PageBanner from "@/components/PageBanner";
-import SectionTitle from "@/components/SectionTitle";
 import ProductCard from "@/components/ProductCard";
-import { fetchAllDynamicProducts, normalizeProduct } from "@/lib/fetchProducts";
+import { fetchAllDynamicProducts, normalizeProduct, getInitialProductsSync } from "@/lib/fetchProducts";
 import { subscribeToCatalog } from "@/lib/client-api";
-import { Search, X, Filter, Package, ShieldCheck, ArrowRight, Loader2 } from "lucide-react";
+import { Search, X, Filter, Package, ShieldCheck, ArrowRight, Loader2, PhoneCall } from "lucide-react";
 
 function ProductsContent({ city }) {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState(getInitialProductsSync);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
 
@@ -29,41 +28,36 @@ function ProductsContent({ city }) {
   const makeLink = (path) => {
     if (!district) return path;
     if (path === "/") return `/${district}`;
-    if (path.startsWith("/items?")) {
-      return `/${district}${path}`;
-    }
     return `/${district}${path.startsWith("/") ? path : `/${path}`}`;
+  };
+
+  const handleResetFilters = () => {
+    setSelectedCategory("All Categories");
+    setSearchQuery("");
   };
 
   useEffect(() => {
     let isMounted = true;
 
-    const loadInitialProducts = async () => {
+    const loadProducts = async () => {
       try {
         const fetched = await fetchAllDynamicProducts();
-        if (isMounted) {
-          setProducts(fetched || []);
+        if (isMounted && Array.isArray(fetched) && fetched.length > 0) {
+          setProducts(fetched);
         }
       } catch (err) {
-        console.error("Error loading dynamic products:", err);
-        if (isMounted) setProducts([]);
-      } finally {
-        if (isMounted) setLoading(false);
+        console.warn("[items] Error syncing products:", err?.message || err);
       }
     };
 
-    loadInitialProducts();
+    loadProducts();
 
-    // Subscribe to real-time catalog changes from Firestore
     const unsubscribe = subscribeToCatalog((updatedCatalog) => {
-      if (isMounted && Array.isArray(updatedCatalog) && updatedCatalog.length > 0) {
+      if (isMounted && Array.isArray(updatedCatalog)) {
         const normalized = updatedCatalog
           .map((item) => normalizeProduct(item))
           .filter(Boolean);
-
-        if (normalized.length > 0) {
-          setProducts(normalized);
-        }
+        setProducts(normalized);
       }
     });
 
@@ -86,19 +80,20 @@ function ProductsContent({ city }) {
   // Sync category from URL search params when changed
   useEffect(() => {
     if (urlCategory && typeof urlCategory === "string" && urlCategory.trim()) {
-      const decoded = decodeURIComponent(urlCategory.trim());
-      setSelectedCategory(decoded);
+      setSelectedCategory(decodeURIComponent(urlCategory.trim()));
     }
   }, [urlCategory]);
 
   const filteredProducts = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    const catLower = selectedCategory.toLowerCase().trim();
+
     return products.filter((product) => {
       const matchesCategory =
         selectedCategory === "All Categories" ||
-        (product.category && product.category.toLowerCase().trim() === selectedCategory.toLowerCase().trim()) ||
-        (product.subCategory && product.subCategory.toLowerCase().trim() === selectedCategory.toLowerCase().trim());
+        (product.category && product.category.toLowerCase().trim() === catLower) ||
+        (product.subCategory && product.subCategory.toLowerCase().trim() === catLower);
 
-      const q = searchQuery.toLowerCase().trim();
       const matchesQuery =
         !q ||
         (product.title && product.title.toLowerCase().includes(q)) ||
@@ -176,10 +171,7 @@ function ProductsContent({ city }) {
 
               {(selectedCategory !== "All Categories" || searchQuery) && (
                 <button
-                  onClick={() => {
-                    setSelectedCategory("All Categories");
-                    setSearchQuery("");
-                  }}
+                  onClick={handleResetFilters}
                   className="text-[#245d8e] font-bold hover:underline"
                 >
                   Reset all filters
@@ -188,32 +180,48 @@ function ProductsContent({ city }) {
             </div>
           </div>
 
-          {/* Loading or Grid of Products */}
-          {loading ? (
-            <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {[...Array(6)].map((_, i) => (
-                <div
-                  key={i}
-                  className="h-96 rounded-3xl border border-[#d0e2f2] bg-white p-6 animate-pulse shadow-sm"
-                />
-              ))}
-            </div>
-          ) : filteredProducts.length === 0 ? (
-            <div className="mt-16 text-center rounded-3xl border border-[#d0e2f2] bg-white p-16 shadow-sm">
-              <Package size={48} className="mx-auto text-[#245d8e]/60 mb-4 animate-bounce" />
-              <h3 className="text-2xl font-bold text-[#18344b]">No Instruments Found</h3>
-              <p className="mt-2 text-sm text-[#536e84]">
-                Try adjusting your search keyword or selecting a different equipment category.
+          {/* Grid of Products / Empty State */}
+          {filteredProducts.length === 0 ? (
+            <div className="mt-16 text-center rounded-3xl border border-[#d0e2f2] bg-white p-8 sm:p-14 shadow-sm max-w-2xl mx-auto">
+              <div className="relative mx-auto mb-6 flex h-20 w-20 items-center justify-center">
+                <div className="absolute inset-0 rounded-3xl bg-[#245d8e]/10 animate-ping" />
+                <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-tr from-[#18344b] to-[#245d8e] text-white shadow-xl shadow-[#245d8e]/20">
+                  <Package size={36} className="text-[#d0e2f2] animate-pulse" />
+                </div>
+              </div>
+
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#d0e2f2] bg-[#f0f6fb] px-4 py-1.5 text-xs font-bold text-[#245d8e] mb-4 shadow-sm">
+                <Loader2 size={14} className="animate-spin text-[#245d8e]" />
+                <span className="uppercase tracking-wider">Catalog Updating • Synchronizing Inventory</span>
+              </div>
+
+              <h3 className="text-2xl sm:text-3xl font-black text-[#18344b]">
+                Products Coming Soon
+              </h3>
+
+              <p className="mt-3 text-sm sm:text-base text-[#536e84] leading-relaxed max-w-lg mx-auto">
+                We are actively updating our diagnostics and medical equipment inventory. For current pricing, product availability, or custom hospital tenders, please contact our technical sales team directly.
               </p>
-              <button
-                onClick={() => {
-                  setSelectedCategory("All Categories");
-                  setSearchQuery("");
-                }}
-                className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#245d8e] px-6 py-3 text-sm font-bold !text-white shadow-md hover:bg-[#1c4a73]"
-              >
-                Clear Search Filters
-              </button>
+
+              <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+                <Link
+                  href={makeLink("/contact")}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-[#245d8e] to-[#18344b] px-8 py-4 text-sm sm:text-base font-bold !text-white shadow-lg shadow-[#245d8e]/30 hover:shadow-xl hover:from-[#1c4a73] hover:to-[#12283a] transition-all duration-300 hover:scale-105"
+                >
+                  <PhoneCall size={18} className="text-[#a4cdec]" />
+                  <span>Contact Sales & Request Catalog</span>
+                  <ArrowRight size={18} className="text-white" />
+                </Link>
+
+                {(selectedCategory !== "All Categories" || searchQuery) && (
+                  <button
+                    onClick={handleResetFilters}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl border border-[#d0e2f2] bg-[#f0f6fb] px-6 py-4 text-sm font-bold text-[#245d8e] hover:bg-[#e9f3fa] transition-all"
+                  >
+                    Clear Search Filters
+                  </button>
+                )}
+              </div>
             </div>
           ) : (
             <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
@@ -251,7 +259,7 @@ function ProductsContent({ city }) {
               <div className="lg:col-span-4 flex items-center justify-end">
                 <a
                   href={makeLink("/contact")}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-8 py-4 text-base font-bold text-[#18344b] shadow-lg transition-all hover:bg-[#e9f3fa]"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-8 py-4 text-base font-bold !text-[#18344b] shadow-lg transition-all hover:bg-[#e9f3fa]"
                 >
                   <span>Request Bulk Tender Quote</span>
                   <ArrowRight size={18} className="text-[#18344b]" />

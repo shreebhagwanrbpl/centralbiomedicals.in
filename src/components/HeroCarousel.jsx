@@ -45,6 +45,7 @@ export default function HeroCarousel({
   homeData = null,
   locationTitle = "",
   makeLink = (path) => path,
+  loading = false,
 }) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -106,7 +107,7 @@ export default function HeroCarousel({
           list.push({
             id: `vid-${idx}`,
             type: "video",
-            url: vUrl,
+            url,
           });
         }
       });
@@ -136,6 +137,8 @@ export default function HeroCarousel({
 
   const btn1Text = homeData?.button1Text?.trim() || "";
   const btn2Text = homeData?.button2Text?.trim() || "";
+
+  const isLoading = loading || (!homeData && !heroTitle);
 
   // Static routes for buttons
   const btn1Href = makeLink("/items");
@@ -255,77 +258,104 @@ export default function HeroCarousel({
         {/* Foreground Content Container */}
         <div className="container-custom relative z-20 h-full flex flex-col justify-center py-6 sm:py-8">
           <div className="max-w-2xl lg:max-w-3xl">
-            {/* Top Badge */}
-            <motion.div
-              initial={{ opacity: 0, y: -15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 rounded-full border border-[#38bdf8]/60 bg-[#0c2a47]/95 px-4 py-1 text-xs font-extrabold uppercase tracking-wider text-[#bae6fd] shadow-xl backdrop-blur-md"
-            >
-              <Sparkles size={14} className="text-[#38bdf8] animate-pulse" />
-              <span className="text-[#e0f2fe] font-bold" style={{ color: "#e0f2fe" }}>
-                {locationTitle
-                  ? `Leading Biomedical Supplier in ${locationTitle}`
-                  : "Pioneering Biomedical & Diagnostic Innovations"}
-              </span>
-            </motion.div>
+            {isLoading ? (
+              <div className="space-y-4 pt-1 animate-pulse">
+                {/* Skeleton Top Badge */}
+                <div className="h-7 w-52 sm:w-72 rounded-full bg-white/20 backdrop-blur-md border border-white/20" />
 
-            {/* Main Heading with 100% guaranteed pure white color & drop-shadow */}
-            {heroTitle && (
-              <motion.h1
-                key={`title-${currentSlide}-${heroTitle}`}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                style={{ color: "#ffffff", textShadow: "0 4px 20px rgba(0,0,0,0.95), 0 1px 3px rgba(0,0,0,0.8)" }}
-                className="mt-3 text-2xl font-black tracking-tight !text-white sm:text-3xl md:text-4xl lg:text-5xl leading-[1.15]"
-              >
-                {heroTitle}
-              </motion.h1>
-            )}
+                {/* Skeleton Main Heading */}
+                <div className="space-y-3 pt-2">
+                  <div className="h-8 sm:h-10 md:h-12 w-full max-w-xl rounded-2xl bg-white/25 backdrop-blur-md" />
+                  <div className="h-8 sm:h-10 md:h-12 w-4/5 max-w-lg rounded-2xl bg-white/20 backdrop-blur-md" />
+                </div>
 
-            {/* Description with pure white/slate contrast */}
-            {heroDescription && (
-              <motion.p
-                key={`desc-${currentSlide}-${heroDescription}`}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                style={{ color: "#f1f5f9", textShadow: "0 2px 10px rgba(0,0,0,0.95)" }}
-                className="mt-2.5 text-xs sm:text-sm md:text-base leading-relaxed !text-slate-100 max-w-2xl font-medium line-clamp-2 md:line-clamp-3"
-              >
-                {heroDescription}
-              </motion.p>
-            )}
+                {/* Skeleton Description */}
+                <div className="space-y-2 pt-1">
+                  <div className="h-4 sm:h-5 w-full max-w-lg rounded-lg bg-white/15 backdrop-blur-md" />
+                  <div className="h-4 sm:h-5 w-3/4 max-w-md rounded-lg bg-white/15 backdrop-blur-md" />
+                </div>
 
-            {/* Action Buttons with Clear Normal & Hover States */}
-            {(btn1Text || btn2Text) && (
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                className="mt-5 sm:mt-6 flex flex-wrap items-center gap-3 sm:gap-4"
-              >
-                {btn1Text && (
-                  <Link
-                    href={btn1Href}
-                    className="group inline-flex items-center justify-center gap-2 rounded-xl bg-[#0284c7] hover:bg-[#0369a1] px-5 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-bold text-white shadow-xl shadow-[#0284c7]/40 transition-all duration-300 hover:scale-105 hover:shadow-2xl border border-[#38bdf8]/50"
+                {/* Skeleton Action Buttons */}
+                <div className="flex flex-wrap items-center gap-3 sm:gap-4 pt-2">
+                  <div className="h-11 sm:h-12 w-36 sm:w-44 rounded-xl bg-[#0284c7]/50 border border-[#38bdf8]/40 shadow-lg" />
+                  <div className="h-11 sm:h-12 w-32 sm:w-40 rounded-xl bg-white/15 border border-white/25 backdrop-blur-md shadow-lg" />
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Top Badge */}
+                <motion.div
+                  initial={{ opacity: 0, y: -15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="inline-flex items-center gap-2 rounded-full border border-[#38bdf8]/60 bg-[#0c2a47]/95 px-4 py-1 text-xs font-extrabold uppercase tracking-wider text-[#bae6fd] shadow-xl backdrop-blur-md"
+                >
+                  <Sparkles size={14} className="text-[#38bdf8] animate-pulse" />
+                  <span className="text-[#e0f2fe] font-bold" style={{ color: "#e0f2fe" }}>
+                    {locationTitle
+                      ? `Leading Biomedical Supplier in ${locationTitle}`
+                      : "Pioneering Biomedical & Diagnostic Innovations"}
+                  </span>
+                </motion.div>
+
+                {/* Main Heading with 100% guaranteed pure white color & drop-shadow */}
+                {heroTitle && (
+                  <motion.h1
+                    key={`title-${currentSlide}-${heroTitle}`}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.1 }}
+                    style={{ color: "#ffffff", textShadow: "0 4px 20px rgba(0,0,0,0.95), 0 1px 3px rgba(0,0,0,0.8)" }}
+                    className="mt-3 text-2xl font-black tracking-tight !text-white sm:text-3xl md:text-4xl lg:text-5xl leading-[1.15]"
                   >
-                    <span className="text-white font-bold" style={{ color: "#ffffff" }}>{btn1Text}</span>
-                    <ArrowRight size={16} className="text-white transition-transform duration-300 group-hover:translate-x-1" />
-                  </Link>
+                    {heroTitle}
+                  </motion.h1>
                 )}
 
-                {btn2Text && (
-                  <Link
-                    href={btn2Href}
-                    className="group inline-flex items-center justify-center gap-2 rounded-xl border-2 border-white/80 bg-black/40 px-5 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-bold text-white backdrop-blur-md shadow-lg transition-all duration-300 hover:bg-white hover:text-[#0f2d4a] hover:border-white hover:scale-105"
+                {/* Description with pure white/slate contrast */}
+                {heroDescription && (
+                  <motion.p
+                    key={`desc-${currentSlide}-${heroDescription}`}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.2 }}
+                    style={{ color: "#f1f5f9", textShadow: "0 2px 10px rgba(0,0,0,0.95)" }}
+                    className="mt-2.5 text-xs sm:text-sm md:text-base leading-relaxed !text-slate-100 max-w-2xl font-medium line-clamp-2 md:line-clamp-3"
                   >
-                    <PhoneCall size={16} className="text-[#38bdf8] transition-colors duration-300 group-hover:text-[#0f2d4a]" />
-                    <span className="font-bold transition-colors duration-300 group-hover:text-[#0f2d4a]" style={{ color: "#ffffff" }}>{btn2Text}</span>
-                  </Link>
+                    {heroDescription}
+                  </motion.p>
                 )}
-              </motion.div>
+
+                {/* Action Buttons with Clear Normal & Hover States */}
+                {(btn1Text || btn2Text) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
+                    className="mt-5 sm:mt-6 flex flex-wrap items-center gap-3 sm:gap-4"
+                  >
+                    {btn1Text && (
+                      <Link
+                        href={btn1Href}
+                        className="group inline-flex items-center justify-center gap-2 rounded-xl bg-[#0284c7] hover:bg-[#0369a1] px-5 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-bold text-white shadow-xl shadow-[#0284c7]/40 transition-all duration-300 hover:scale-105 hover:shadow-2xl border border-[#38bdf8]/50"
+                      >
+                        <span className="text-white font-bold" style={{ color: "#ffffff" }}>{btn1Text}</span>
+                        <ArrowRight size={16} className="text-white transition-transform duration-300 group-hover:translate-x-1" />
+                      </Link>
+                    )}
+
+                    {btn2Text && (
+                      <Link
+                        href={btn2Href}
+                        className="group inline-flex items-center justify-center gap-2 rounded-xl border-2 border-white/80 bg-black/40 px-5 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-bold text-white backdrop-blur-md shadow-lg transition-all duration-300 hover:bg-white hover:text-[#0f2d4a] hover:border-white hover:scale-105"
+                      >
+                        <PhoneCall size={16} className="text-[#38bdf8] transition-colors duration-300 group-hover:text-[#0f2d4a]" />
+                        <span className="font-bold transition-colors duration-300 group-hover:text-[#0f2d4a]" style={{ color: "#ffffff" }}>{btn2Text}</span>
+                      </Link>
+                    )}
+                  </motion.div>
+                )}
+              </>
             )}
 
             {/* Trust Badges with Bright High-Contrast Colors */}

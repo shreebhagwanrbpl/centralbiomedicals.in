@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { doc, getDoc, collection, getDocs } from "@/lib/client-api";
+import { doc, getDoc, collection, getDocs, subscribeToCatalog } from "@/lib/client-api";
 import { db } from "@/lib/client-api";
 import { motion } from "framer-motion";
 import {
@@ -32,7 +32,7 @@ import ServiceCard from "@/components/ServiceCard";
 import ProductCard from "@/components/ProductCard";
 import ContactForm from "@/components/ContactForm";
 import HeroCarousel from "@/components/HeroCarousel";
-import { fetchAllDynamicProducts } from "@/lib/fetchProducts";
+import { fetchAllDynamicProducts, normalizeProduct, getInitialProductsSync } from "@/lib/fetchProducts";
 import { fallbackServices } from "@/data/servicesData";
 
 const stats = [
@@ -114,11 +114,11 @@ const testimonials = [
 ];
 
 export default function Home({ city }) {
-  const [services, setServices] = useState([]);
-  const [products, setProducts] = useState([]);
+  const [services, setServices] = useState(fallbackServices);
+  const [products, setProducts] = useState(getInitialProductsSync);
   const [homeData, setHomeData] = useState(null);
   const [contactInfo, setContactInfo] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const pathname = usePathname();
   const pathParts = pathname.split("/").filter(Boolean);
@@ -138,73 +138,70 @@ export default function Home({ city }) {
   };
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchData = async () => {
       try {
-        // Fetch home page configuration (title, description, buttons, carousel media)
-        try {
-          const homeSnap = await getDoc(
-            doc(db, "websites", "centralbiomedicalsin", "pages", "home")
-          );
-          if (homeSnap.exists()) {
-            setHomeData(homeSnap.data());
-          }
-        } catch (homeErr) {
-          console.error("Error fetching home data:", homeErr);
+        const [homeRes, contactRes, serviceRes, prodRes] = await Promise.allSettled([
+          getDoc(doc(db, "websites", "centralbiomedicalsin", "pages", "home")),
+          getDoc(doc(db, "websites", "centralbiomedicalsin", "pages", "contact")),
+          getDoc(doc(db, "websites", "centralbiomedicalsin", "pages", "services")),
+          fetchAllDynamicProducts(),
+        ]);
+
+        if (!isMounted) return;
+
+        if (homeRes.status === "fulfilled" && homeRes.value?.exists()) {
+          setHomeData(homeRes.value.data());
         }
 
-        // Fetch contact information for dynamic helpline info
-        try {
-          const contactSnap = await getDoc(
-            doc(db, "websites", "centralbiomedicalsin", "pages", "contact")
-          );
-          if (contactSnap.exists()) {
-            setContactInfo(contactSnap.data().contactInfo || []);
-          }
-        } catch (contactErr) {
-          console.error("Error fetching contact data:", contactErr);
+        if (contactRes.status === "fulfilled" && contactRes.value?.exists()) {
+          setContactInfo(contactRes.value.data().contactInfo || []);
         }
 
-        // Fetch services dynamically from Firebase
-        try {
-          const serviceSnap = await getDoc(
-            doc(db, "websites", "centralbiomedicalsin", "pages", "services")
-          );
-          if (serviceSnap.exists() && serviceSnap.data().services?.length > 0) {
-            const validServices = serviceSnap.data().services.filter((s) => s.title || s.desc);
-            setServices(validServices.length > 0 ? validServices : fallbackServices);
-          } else {
-            setServices(fallbackServices);
-          }
-        } catch (serviceErr) {
-          console.warn("Using fallback services:", serviceErr?.message || serviceErr);
+        if (serviceRes.status === "fulfilled" && serviceRes.value?.exists() && serviceRes.value.data().services?.length > 0) {
+          const validServices = serviceRes.value.data().services.filter((s) => s.title || s.desc);
+          setServices(validServices.length > 0 ? validServices : fallbackServices);
+        } else {
           setServices(fallbackServices);
         }
 
-        // Fetch products dynamically from Firestore
-        try {
-          const fetchedProducts = await fetchAllDynamicProducts();
-          if (fetchedProducts && fetchedProducts.length > 0) {
-            setProducts(fetchedProducts);
-          } else {
-            setProducts([]);
-          }
-        } catch (prodErr) {
-          console.warn("Using fallback products:", prodErr?.message || prodErr);
+        if (prodRes.status === "fulfilled" && Array.isArray(prodRes.value)) {
+          setProducts(prodRes.value);
+        } else {
           setProducts([]);
         }
       } catch (err) {
-        console.warn("Error in home data fetch:", err?.message || err);
+        console.warn("Error in parallel home data fetch:", err?.message || err);
+        if (isMounted) {
+          setServices(fallbackServices);
+          setProducts([]);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     fetchData();
+
+    const unsubscribe = subscribeToCatalog((updatedCatalog) => {
+      if (isMounted && Array.isArray(updatedCatalog)) {
+        const normalized = updatedCatalog
+          .map((item) => normalizeProduct(item))
+          .filter(Boolean);
+        setProducts(normalized);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
 
-  // Display only 3 products and 3 services on home page as requested
-  const displayedProducts = products.slice(0, 3);
-  const displayedServices = services.slice(0, 3);
+  // Display up to 3 live dynamic products and services on home page
+  const displayedProducts = (Array.isArray(products) ? products : []).slice(0, 3);
+  const displayedServices = (services.length > 0 ? services : fallbackServices).slice(0, 3);
 
   const serviceIcons = [
     <Microscope size={28} key={1} />,
@@ -248,6 +245,7 @@ export default function Home({ city }) {
         homeData={homeData}
         locationTitle={locationTitle}
         makeLink={makeLink}
+        loading={loading}
       />
 
       {/* ================= STATS TICKER (WHITE BACKGROUND WITH NAVY/BLUE TEXT) ================= */}

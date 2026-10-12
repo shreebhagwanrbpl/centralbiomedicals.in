@@ -5,7 +5,7 @@ import Image from "next/image";
 import toast from "react-hot-toast";
 import { usePathname } from "next/navigation";
 import { makeSlug } from "@/data/productsData";
-import { fetchAllDynamicProducts } from "@/lib/fetchProducts";
+import { fetchAllDynamicProducts, normalizeProduct, getInitialProductsSync } from "@/lib/fetchProducts";
 import { Microscope } from "lucide-react";
 
 import {
@@ -22,6 +22,7 @@ import {
     getDoc,
     addDoc,
     collection,
+    subscribeToCatalog,
 } from "@/lib/client-api";
 import { db } from "@/lib/client-api";
 
@@ -194,10 +195,24 @@ const getWebsiteDomain = () => {
 };
 
 export default function ProductDetails({ slug }) {
-    const [product, setProduct] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [imageLoaded, setImageLoaded] = useState(false);
-    const [selectedImage, setSelectedImage] = useState("");
+    const initialProduct = useMemo(() => {
+        const list = getInitialProductsSync();
+        return list.find((p) => p.slug === slug || makeSlug(p.title) === slug || p.id === slug) || null;
+    }, [slug]);
+
+    const [product, setProduct] = useState(initialProduct);
+    const [loading, setLoading] = useState(!initialProduct);
+    const [imageLoaded, setImageLoaded] = useState(true);
+    const [selectedImage, setSelectedImage] = useState(() => {
+        if (!initialProduct) return "";
+        return (
+            (Array.isArray(initialProduct.images) && initialProduct.images[0]) ||
+            initialProduct.image ||
+            initialProduct.imgUrl ||
+            initialProduct.imageUrl ||
+            ""
+        );
+    });
     const [selectedMedia, setSelectedMedia] = useState("image");
     const [showShare, setShowShare] = useState(false);
     const [contactInfo, setContactInfo] = useState([]);
@@ -302,36 +317,60 @@ export default function ProductDetails({ slug }) {
         city.slice(1);
 
     useEffect(() => {
+        let isMounted = true;
         const loadProduct = async () => {
             try {
-                setLoading(true);
+                if (!product) setLoading(true);
                 const allProducts = await fetchAllDynamicProducts();
+                if (!isMounted) return;
 
                 const found = allProducts.find(
                     (p) => p.slug === slug || makeSlug(p.title) === slug || p.id === slug
                 );
 
-                setProduct(found || null);
-
                 if (found) {
+                    setProduct(found);
                     const mainImg =
                         (Array.isArray(found.images) && found.images[0]) ||
                         found.image ||
                         found.imgUrl ||
                         found.imageUrl ||
                         "";
-                    setSelectedImage(mainImg);
+                    setSelectedImage((prev) => prev || mainImg);
                     setSelectedMedia("image");
+                } else if (!product) {
+                    setProduct(null);
                 }
             } catch (error) {
-                console.error("Error loading product from Firestore:", error);
-                setProduct(null);
+                console.error("Error loading product:", error);
+                if (isMounted && !product) setProduct(null);
             } finally {
-                setLoading(false);
+                if (isMounted) setLoading(false);
             }
         };
 
         loadProduct();
+
+        const unsubscribe = subscribeToCatalog((updatedCatalog) => {
+            if (!isMounted || !Array.isArray(updatedCatalog)) return;
+            const normalized = updatedCatalog.map((item) => normalizeProduct(item)).filter(Boolean);
+            const found = normalized.find(
+                (p) => p.slug === slug || makeSlug(p.title) === slug || p.id === slug
+            );
+            setProduct(found || null);
+            if (found && !selectedImage) {
+                const mainImg =
+                    (Array.isArray(found.images) && found.images[0]) ||
+                    found.image ||
+                    "";
+                setSelectedImage(mainImg);
+            }
+        });
+
+        return () => {
+            isMounted = false;
+            if (unsubscribe) unsubscribe();
+        };
     }, [slug]);
 
     useEffect(() => {
@@ -759,18 +798,35 @@ export default function ProductDetails({ slug }) {
         return (
             <section className="py-16 md:py-24 bg-[#f8fafc] text-center">
                 <div className="container-custom max-w-xl">
-                    <div className="rounded-3xl border border-[#d0e2f2] bg-white p-12 shadow-sm">
-                        <Microscope size={48} className="mx-auto text-[#245d8e] mb-4 animate-bounce" />
-                        <h2 className="text-2xl font-bold text-[#18344b]">Product Not Found</h2>
+                    <div className="rounded-3xl border border-[#d0e2f2] bg-white p-10 sm:p-14 shadow-sm">
+                        <div className="relative mx-auto mb-5 flex h-16 w-16 items-center justify-center">
+                            <div className="absolute inset-0 rounded-2xl bg-[#245d8e]/10 animate-ping" />
+                            <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#18344b] to-[#245d8e] text-white shadow-lg">
+                                <Microscope size={32} className="text-[#d0e2f2] animate-pulse" />
+                            </div>
+                        </div>
+                        <div className="inline-flex items-center gap-2 rounded-full border border-[#d0e2f2] bg-[#f0f6fb] px-4 py-1.5 text-xs font-bold text-[#245d8e] mb-3 shadow-sm">
+                            <span className="h-2 w-2 rounded-full bg-[#245d8e] animate-ping" />
+                            <span className="uppercase tracking-wider">Catalog Updating • Product Coming Soon</span>
+                        </div>
+                        <h2 className="text-2xl font-bold text-[#18344b]">Product Specifications Coming Soon</h2>
                         <p className="mt-2 text-sm text-[#536e84]">
-                            The requested biomedical instrument could not be located in our active catalog.
+                            This biomedical instrument is currently being updated in our catalog. Contact our engineering team for instant quotation, datasheet brochure, and technical parameters.
                         </p>
-                        <a
-                            href="/items"
-                            className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#245d8e] px-6 py-3 text-sm font-bold text-white shadow-md hover:bg-[#1c4a73] transition-all"
-                        >
-                            Browse All Products
-                        </a>
+                        <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+                            <a
+                                href={district ? `/${district}/contact` : "/contact"}
+                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-[#245d8e] px-6 py-3 text-sm font-bold text-white shadow-md hover:bg-[#1c4a73] transition-all"
+                            >
+                                Contact Sales & Inquire
+                            </a>
+                            <a
+                                href={district ? `/${district}/items` : "/items"}
+                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl border border-[#d0e2f2] bg-[#f0f6fb] px-6 py-3 text-sm font-bold text-[#245d8e] hover:bg-[#e9f3fa] transition-all"
+                            >
+                                Browse All Products
+                            </a>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -881,8 +937,10 @@ export default function ProductDetails({ slug }) {
                                             alt={product.title || "Product"}
                                             fill
                                             priority
+                                            unoptimized
+                                            loading="eager"
                                             onLoad={() => setImageLoaded(true)}
-                                            className="object-contain p-6 transition-all duration-500 hover:scale-105"
+                                            className="object-contain p-6 transition-all duration-300 hover:scale-105"
                                         />
                                     ) : (
                                         <div className="flex h-full w-full flex-col items-center justify-center p-8 text-center bg-[#f0f6fb]">

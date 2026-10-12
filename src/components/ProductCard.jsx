@@ -93,31 +93,16 @@ export default function ProductCard({
           className="relative block h-60 w-full overflow-hidden bg-gradient-to-b from-[#f0f6fb] to-white p-4 border-b border-[#d0e2f2]/60"
         >
           {hasValidImage ? (
-            <>
-              {/* Shimmer loading skeleton */}
-              {!imgLoaded && (
-                <div className="absolute inset-0 z-0 flex flex-col items-center justify-center bg-gradient-to-br from-[#e9f3fa] via-[#f0f6fb] to-[#e9f3fa] animate-pulse">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm border border-[#d0e2f2] text-[#245d8e]">
-                    <Microscope size={26} className="animate-bounce text-[#245d8e]" />
-                  </div>
-                  <span className="mt-2 text-[11px] font-bold uppercase tracking-wider text-[#536e84]">
-                    Loading Image...
-                  </span>
-                </div>
-              )}
-
               <Image
                 src={image}
                 alt={title || "Biomedical Equipment"}
                 fill
-                onLoad={() => setImgLoaded(true)}
+                loading="eager"
+                unoptimized
                 onError={() => setImgError(true)}
-                className={`object-contain p-2 transition-all duration-500 group-hover:scale-105 ${
-                  imgLoaded ? "opacity-100 scale-100" : "opacity-0 scale-95"
-                }`}
+                className="object-contain p-2 transition-all duration-300 group-hover:scale-105"
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               />
-            </>
           ) : (
             /* Premium Medical Instrument Placeholder */
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-[#f0f6fb] via-white to-[#e9f3fa] p-6 text-center">

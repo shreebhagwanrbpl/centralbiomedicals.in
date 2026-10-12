@@ -65,22 +65,15 @@ export default function Footer() {
         // 2. Fetch Dynamic Product Categories
         try {
           const cats = await fetchAllDynamicCategories();
-          if (isMounted && Array.isArray(cats) && cats.length > 0) {
-            setCategories(cats);
-          } else {
-            const prods = await fetchAllDynamicProducts();
-            if (isMounted && Array.isArray(prods) && prods.length > 0) {
-              const catSet = new Set();
-              prods.forEach((p) => {
-                if (p.category && String(p.category).trim() && String(p.category).trim() !== "All Categories") {
-                  catSet.add(String(p.category).trim());
-                }
-              });
-              setCategories(Array.from(catSet));
-            }
+          if (isMounted && Array.isArray(cats)) {
+            const validCats = cats.filter(
+              (c) => c && String(c).trim() && String(c).trim() !== "All Categories"
+            );
+            setCategories(validCats);
           }
         } catch (prodErr) {
           console.warn("Could not load dynamic footer categories:", prodErr?.message || prodErr);
+          if (isMounted) setCategories([]);
         }
       } finally {
         if (isMounted) setLoading(false);

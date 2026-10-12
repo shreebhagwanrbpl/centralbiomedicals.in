@@ -4,13 +4,48 @@ import { WEBSITE_ID, COMPANY_ID, makeSlug } from "./catalog-utils";
 
 export const db = { __admin: true };
 const qs = (params = {}) => new URLSearchParams({ websiteId: WEBSITE_ID, companyId: COMPANY_ID, ...params }).toString();
-async function request(path, options={}) {
+
+const clientApiCache = new Map();
+const CLIENT_API_TTL = 3 * 1000; // 3 seconds cache for live reflection of admin updates
+
+async function request(path, options = {}) {
+  const isGet = !options.method || options.method.toUpperCase() === "GET";
+  const now = Date.now();
+
+  if (isGet) {
+    const cached = clientApiCache.get(path);
+    if (cached && now - cached.time < CLIENT_API_TTL) {
+      return cached.data;
+    }
+    if (typeof window !== "undefined") {
+      try {
+        const stored = window.sessionStorage.getItem("cb_api_" + path);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed) {
+            if (!cached) clientApiCache.set(path, { data: parsed, time: now });
+            if (now - (parsed.__savedAt || 0) < 15000) {
+              return parsed;
+            }
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }
+
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+
     const r = await fetch(path, {
       ...options,
-      cache: "no-store",
-      headers: { Accept: "application/json", ...(options.headers || {}) }
+      signal: options.signal || controller.signal,
+      headers: { Accept: "application/json", ...(options.headers || {}) },
     });
+    clearTimeout(timeoutId);
+
     const text = await r.text();
     let b;
     try { b = text ? JSON.parse(text) : null; } catch { b = text; }
@@ -20,10 +55,27 @@ async function request(path, options={}) {
       }
       return null;
     }
+
+    if (isGet && b && b.success !== false) {
+      clientApiCache.set(path, { data: b, time: now });
+      if (typeof window !== "undefined") {
+        try {
+          window.sessionStorage.setItem("cb_api_" + path, JSON.stringify({ ...b, __savedAt: now }));
+        } catch {
+          // ignore
+        }
+      }
+    }
+
     return b;
   } catch (err) {
     if (options.method && options.method !== "GET") {
       throw err;
+    }
+    // Return stale cache if available on network error/timeout
+    if (isGet) {
+      const stale = clientApiCache.get(path);
+      if (stale?.data) return stale.data;
     }
     return null;
   }
@@ -88,20 +140,53 @@ export { makeSlug };
 
 export function subscribeToCatalog(onUpdate, onError) {
   let stopped = false;
+  let lastSignature = "";
+
   const run = async () => {
+    if (stopped) return;
     try {
-      const response = await request(`/api/catalog?${qs()}`);
-      if (response && !stopped) {
-        const products = response?.products ?? response?.data?.products ?? response?.data ?? response;
+      const now = Date.now();
+      const response = await fetch(`/api/catalog?${qs({ _t: now })}`, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+      });
+      if (!response.ok) return;
+      const json = await response.json();
+      if (json && !stopped) {
+        const products = json?.products ?? json?.data?.products ?? json?.data ?? [];
         if (Array.isArray(products)) {
-          onUpdate(products);
+          const signature = `${products.length}:${products.map((p) => p.id || p.productId || p.slug).join(",")}`;
+          if (signature !== lastSignature) {
+            lastSignature = signature;
+            onUpdate(products);
+          }
         }
       }
     } catch (error) {
       if (!stopped && onError) onError(error);
     }
   };
+
   run();
-  const timer = setInterval(run, 60000);
-  return () => { stopped = true; clearInterval(timer); };
+  const timer = setInterval(run, 4000);
+
+  const handleLiveEvent = () => {
+    if (!stopped) run();
+  };
+
+  if (typeof window !== "undefined") {
+    window.addEventListener("focus", handleLiveEvent);
+    window.addEventListener("cb_catalog_updated", handleLiveEvent);
+    document.addEventListener("visibilitychange", handleLiveEvent);
+  }
+
+  return () => {
+    stopped = true;
+    clearInterval(timer);
+    if (typeof window !== "undefined") {
+      window.removeEventListener("focus", handleLiveEvent);
+      window.removeEventListener("cb_catalog_updated", handleLiveEvent);
+      document.removeEventListener("visibilitychange", handleLiveEvent);
+    }
+  };
 }
