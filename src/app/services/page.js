@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 
 import { fallbackServices } from "@/data/servicesData";
+import { initialServicesData, initialContactInfo } from "@/data/siteData";
 
 const workflowSteps = [
   {
@@ -54,9 +55,9 @@ const workflowSteps = [
 ];
 
 export default function ServicesPage() {
-  const [services, setServices] = useState([]);
-  const [contactInfo, setContactInfo] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [services, setServices] = useState(initialServicesData.services || fallbackServices);
+  const [contactInfo, setContactInfo] = useState(initialContactInfo);
+  const [loading, setLoading] = useState(false);
 
   const pathname = usePathname();
   const pathParts = pathname.split("/").filter(Boolean);

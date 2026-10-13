@@ -32,8 +32,9 @@ import ServiceCard from "@/components/ServiceCard";
 import ProductCard from "@/components/ProductCard";
 import ContactForm from "@/components/ContactForm";
 import HeroCarousel from "@/components/HeroCarousel";
-import { fetchAllDynamicProducts, normalizeProduct, getInitialProductsSync } from "@/lib/fetchProducts";
+import { fetchAllDynamicProducts, normalizeProduct, getInitialProductsSync, getStoredProducts } from "@/lib/fetchProducts";
 import { fallbackServices } from "@/data/servicesData";
+import { initialHomeData, initialContactInfo } from "@/data/siteData";
 
 const stats = [
   {
@@ -116,8 +117,8 @@ const testimonials = [
 export default function Home({ city }) {
   const [services, setServices] = useState(fallbackServices);
   const [products, setProducts] = useState(getInitialProductsSync);
-  const [homeData, setHomeData] = useState(null);
-  const [contactInfo, setContactInfo] = useState([]);
+  const [homeData, setHomeData] = useState(initialHomeData);
+  const [contactInfo, setContactInfo] = useState(initialContactInfo);
   const [loading, setLoading] = useState(false);
 
   const pathname = usePathname();
@@ -139,6 +140,12 @@ export default function Home({ city }) {
 
   useEffect(() => {
     let isMounted = true;
+
+    // Instantly hydrate cached products from localStorage post-hydration (0ms, zero hydration error)
+    const stored = getStoredProducts();
+    if (stored && stored.length > 0) {
+      setProducts(stored);
+    }
 
     const fetchData = async () => {
       try {
@@ -166,16 +173,13 @@ export default function Home({ city }) {
           setServices(fallbackServices);
         }
 
-        if (prodRes.status === "fulfilled" && Array.isArray(prodRes.value)) {
+        if (prodRes.status === "fulfilled" && Array.isArray(prodRes.value) && prodRes.value.length > 0) {
           setProducts(prodRes.value);
-        } else {
-          setProducts([]);
         }
       } catch (err) {
         console.warn("Error in parallel home data fetch:", err?.message || err);
         if (isMounted) {
           setServices(fallbackServices);
-          setProducts([]);
         }
       } finally {
         if (isMounted) setLoading(false);

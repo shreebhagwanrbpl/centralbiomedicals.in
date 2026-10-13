@@ -10,11 +10,12 @@ import { Mail, Phone, MapPin, ArrowRight } from "lucide-react";
 import { FaFacebook, FaInstagram } from "react-icons/fa";
 import { fetchAllDynamicProducts, fetchAllDynamicCategories } from "@/lib/fetchProducts";
 import { subscribeToCatalog } from "@/lib/client-api";
+import { initialContactInfo } from "@/data/siteData";
 
 export default function Footer() {
-  const [contactInfo, setContactInfo] = useState([]);
+  const [contactInfo, setContactInfo] = useState(initialContactInfo);
   const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [districtData, setDistrictData] = useState(null);
 
   const pathname = usePathname();

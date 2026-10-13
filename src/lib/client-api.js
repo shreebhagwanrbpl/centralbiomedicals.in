@@ -3,10 +3,15 @@
 import { WEBSITE_ID, COMPANY_ID, makeSlug } from "./catalog-utils";
 
 export const db = { __admin: true };
-const qs = (params = {}) => new URLSearchParams({ websiteId: WEBSITE_ID, companyId: COMPANY_ID, ...params }).toString();
+const qs = (params = {}) =>
+  new URLSearchParams({
+    websiteId: WEBSITE_ID,
+    companyId: COMPANY_ID,
+    ...params,
+  }).toString();
 
 const clientApiCache = new Map();
-const CLIENT_API_TTL = 3 * 1000; // 3 seconds cache for live reflection of admin updates
+const CLIENT_API_TTL = 15 * 1000; // 15 seconds in-memory cache
 
 async function request(path, options = {}) {
   const isGet = !options.method || options.method.toUpperCase() === "GET";
@@ -24,21 +29,24 @@ async function request(path, options = {}) {
           const parsed = JSON.parse(stored);
           if (parsed) {
             if (!cached) clientApiCache.set(path, { data: parsed, time: now });
-            if (now - (parsed.__savedAt || 0) < 15000) {
+            if (now - (parsed.__savedAt || 0) < 30000) {
               return parsed;
             }
           }
         }
       } catch {
-        // ignore
+        // ignore storage errors
       }
     }
   }
 
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4000);
+  const timeoutMs = isGet ? 10000 : 30000;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    controller.abort(new DOMException(`Request timed out after ${timeoutMs}ms`, "TimeoutError"));
+  }, timeoutMs);
 
+  try {
     const r = await fetch(path, {
       ...options,
       signal: options.signal || controller.signal,
@@ -48,10 +56,15 @@ async function request(path, options = {}) {
 
     const text = await r.text();
     let b;
-    try { b = text ? JSON.parse(text) : null; } catch { b = text; }
+    try {
+      b = text ? JSON.parse(text) : null;
+    } catch {
+      b = text;
+    }
+
     if (!r.ok || b?.success === false || b?.ok === false) {
-      if (options.method && options.method !== "GET") {
-        throw new Error(b?.error || `API ${r.status}`);
+      if (!isGet) {
+        throw new Error(b?.error || `API Error ${r.status}`);
       }
       return null;
     }
@@ -60,7 +73,10 @@ async function request(path, options = {}) {
       clientApiCache.set(path, { data: b, time: now });
       if (typeof window !== "undefined") {
         try {
-          window.sessionStorage.setItem("cb_api_" + path, JSON.stringify({ ...b, __savedAt: now }));
+          window.sessionStorage.setItem(
+            "cb_api_" + path,
+            JSON.stringify({ ...b, __savedAt: now })
+          );
         } catch {
           // ignore
         }
@@ -69,22 +85,33 @@ async function request(path, options = {}) {
 
     return b;
   } catch (err) {
-    if (options.method && options.method !== "GET") {
+    clearTimeout(timeoutId);
+    if (!isGet) {
       throw err;
     }
     // Return stale cache if available on network error/timeout
-    if (isGet) {
-      const stale = clientApiCache.get(path);
-      if (stale?.data) return stale.data;
-    }
+    const stale = clientApiCache.get(path);
+    if (stale?.data) return stale.data;
     return null;
   }
 }
-export function doc(_db, ...parts) { return { __type:"doc", path:parts.join("/") }; }
-export function collection(_db, ...parts) { return { __type:"collection", path:parts.join("/") }; }
-export function query(ref, ...constraints) { return { ...ref, constraints }; }
-export function limit(n) { return { type:"limit", value:n }; }
-export function where(field, op, value) { return { type:"where", field, op, value }; }
+
+export function doc(_db, ...parts) {
+  return { __type: "doc", path: parts.join("/") };
+}
+export function collection(_db, ...parts) {
+  return { __type: "collection", path: parts.join("/") };
+}
+export function query(ref, ...constraints) {
+  return { ...ref, constraints };
+}
+export function limit(n) {
+  return { type: "limit", value: n };
+}
+export function where(field, op, value) {
+  return { type: "where", field, op, value };
+}
+
 export async function getDoc(ref) {
   try {
     const parts = String(ref?.path || "").split("/");
@@ -93,23 +120,39 @@ export async function getDoc(ref) {
 
     if (pages >= 0 && parts[pages + 1]) {
       const pageName = parts[pages + 1];
-      const j = await request(`/api/site-data?${qs({ type: pageName, pageType: pageName })}`);
+      const j = await request(
+        `/api/site-data?${qs({ type: pageName, pageType: pageName })}`
+      );
       const data = j?.data ?? j?.page ?? j;
-      const validData = data && typeof data === "object" && Object.keys(data).length > 0 ? data : null;
+      const validData =
+        data && typeof data === "object" && Object.keys(data).length > 0
+          ? data
+          : null;
       return { exists: () => !!validData, data: () => validData || {} };
     }
 
     if (districts >= 0 && parts[districts + 1]) {
       const distName = parts[districts + 1];
-      const j = await request(`/api/site-data?${qs({ type: "district", pageType: "district", district: distName })}`);
+      const j = await request(
+        `/api/site-data?${qs({
+          type: "district",
+          pageType: "district",
+          district: distName,
+        })}`
+      );
       const data = j?.data ?? j;
-      const validData = data && typeof data === "object" && Object.keys(data).length > 0 ? data : null;
+      const validData =
+        data && typeof data === "object" && Object.keys(data).length > 0
+          ? data
+          : null;
       return { exists: () => !!validData, data: () => validData || {} };
     }
 
     if (parts.includes("products") || parts.includes("items")) {
       const j = await request(`/api/catalog?${qs()}`);
-      const data = { products: j?.products ?? j?.data?.products ?? j?.data ?? [] };
+      const data = {
+        products: j?.products ?? j?.data?.products ?? j?.data ?? [],
+      };
       return { exists: () => true, data: () => data };
     }
 
@@ -118,24 +161,72 @@ export async function getDoc(ref) {
     return { exists: () => false, data: () => ({}) };
   }
 }
+
 export async function getDocs(ref) {
   try {
     const path = String(ref?.path || "");
     if (path.includes("categoryproducts") && path.endsWith("categories")) {
       const j = await request(`/api/catalog?${qs()}`);
       const cats = j?.categories ?? j?.data?.categories ?? [];
-      return { empty: !cats.length, docs: cats.map((x, i) => ({ id: x.id || x.slug || `category-${i}`, data: () => x })) };
+      return {
+        empty: !cats.length,
+        docs: cats.map((x, i) => ({
+          id: x.id || x.slug || `category-${i}`,
+          data: () => x,
+        })),
+      };
     }
     const j = await request(`/api/catalog?${qs()}`);
     const products = j?.products ?? j?.data?.products ?? j?.data ?? j;
     const arr = Array.isArray(products) ? products : [];
-    return { empty: !arr.length, docs: arr.map((x, i) => ({ id: x.id || x.uid || x.slug || `product-${i}`, data: () => x })) };
+    return {
+      empty: !arr.length,
+      docs: arr.map((x, i) => ({
+        id: x.id || x.uid || x.slug || `product-${i}`,
+        data: () => x,
+      })),
+    };
   } catch {
     return { empty: true, docs: [] };
   }
 }
-export async function addDoc(ref, payload={}) { const path=String(ref?.path||""); const endpoint=path.includes("productQueries")?"/api/product-query":"/api/contact-query"; return request(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({websiteId:WEBSITE_ID,companyId:COMPANY_ID,...payload})}); }
-export function onSnapshot(ref, onNext, onError) { let stopped=false; const run=async()=>{try{const snap=ref?.__type==="doc"?await getDoc(ref):await getDocs(ref); if(!stopped) onNext(snap)}catch(e){if(!stopped&&onError)onError(e)}}; run(); const timer=setInterval(run,60000); return ()=>{stopped=true;clearInterval(timer)}; }
+
+export async function addDoc(ref, payload = {}) {
+  const path = String(ref?.path || "");
+  const endpoint = path.includes("productQueries")
+    ? "/api/product-query"
+    : "/api/contact-query";
+  const res = await request(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      websiteId: WEBSITE_ID,
+      companyId: COMPANY_ID,
+      ...payload,
+    }),
+  });
+  return { id: res?.id || `query-${Date.now()}` };
+}
+
+export function onSnapshot(ref, onNext, onError) {
+  let stopped = false;
+  const run = async () => {
+    try {
+      const snap =
+        ref?.__type === "doc" ? await getDoc(ref) : await getDocs(ref);
+      if (!stopped) onNext(snap);
+    } catch (e) {
+      if (!stopped && onError) onError(e);
+    }
+  };
+  run();
+  const timer = setInterval(run, 60000);
+  return () => {
+    stopped = true;
+    clearInterval(timer);
+  };
+}
+
 export { makeSlug };
 
 export function subscribeToCatalog(onUpdate, onError) {
@@ -153,9 +244,12 @@ export function subscribeToCatalog(onUpdate, onError) {
       if (!response.ok) return;
       const json = await response.json();
       if (json && !stopped) {
-        const products = json?.products ?? json?.data?.products ?? json?.data ?? [];
+        const products =
+          json?.products ?? json?.data?.products ?? json?.data ?? [];
         if (Array.isArray(products)) {
-          const signature = `${products.length}:${products.map((p) => p.id || p.productId || p.slug).join(",")}`;
+          const signature = `${products.length}:${products
+            .map((p) => p.id || p.productId || p.slug)
+            .join(",")}`;
           if (signature !== lastSignature) {
             lastSignature = signature;
             onUpdate(products);
@@ -168,7 +262,8 @@ export function subscribeToCatalog(onUpdate, onError) {
   };
 
   run();
-  const timer = setInterval(run, 4000);
+  // Poll periodically without overwhelming CPU / network
+  const timer = setInterval(run, 20000);
 
   const handleLiveEvent = () => {
     if (!stopped) run();

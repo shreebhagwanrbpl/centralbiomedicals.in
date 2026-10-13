@@ -15,6 +15,7 @@ import {
   Image as ImageIcon,
   Film,
 } from "lucide-react";
+import { initialHomeData } from "@/data/siteData";
 
 // High-quality local biomedical equipment slides
 const FALLBACK_SLIDES = [
@@ -128,17 +129,22 @@ export default function HeroCarousel({
   const dbSlides = parseMediaList(homeData);
   const slides = dbSlides.length > 0 ? dbSlides : FALLBACK_SLIDES;
 
-  // Dynamic texts - strictly dynamic without static fallback text
+  // Dynamic texts with immediate high-speed fallback
   const heroTitle =
     homeData?.title?.trim() ||
-    (locationTitle ? `Leading Biomedical & Diagnostic Supplier in ${locationTitle}` : "");
+    (locationTitle
+      ? `Leading Biomedical & Diagnostic Supplier in ${locationTitle}`
+      : initialHomeData.title);
 
-  const heroDescription = homeData?.description?.trim() || "";
+  const heroDescription =
+    homeData?.description?.trim() || initialHomeData.description;
 
-  const btn1Text = homeData?.button1Text?.trim() || "";
-  const btn2Text = homeData?.button2Text?.trim() || "";
+  const btn1Text =
+    homeData?.button1Text?.trim() || initialHomeData.button1Text;
+  const btn2Text =
+    homeData?.button2Text?.trim() || initialHomeData.button2Text;
 
-  const isLoading = loading || (!homeData && !heroTitle);
+  const isLoading = loading && !heroTitle;
 
   // Static routes for buttons
   const btn1Href = makeLink("/items");
@@ -242,6 +248,8 @@ export default function HeroCarousel({
               <img
                 src={activeMedia?.url}
                 alt={`Hero Slide ${currentSlide + 1}`}
+                fetchPriority={currentSlide === 0 ? "high" : "auto"}
+                loading={currentSlide === 0 ? "eager" : "lazy"}
                 className="w-full h-full object-cover object-center opacity-100 brightness-[1.06] contrast-[1.06]"
                 onError={(e) => {
                   e.target.src = FALLBACK_SLIDES[0].url;

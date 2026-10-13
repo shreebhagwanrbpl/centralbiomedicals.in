@@ -5,9 +5,9 @@ import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import PageBanner from "@/components/PageBanner";
 import ProductCard from "@/components/ProductCard";
-import { fetchAllDynamicProducts, normalizeProduct, getInitialProductsSync } from "@/lib/fetchProducts";
+import { fetchAllDynamicProducts, normalizeProduct, getInitialProductsSync, getStoredProducts } from "@/lib/fetchProducts";
 import { subscribeToCatalog } from "@/lib/client-api";
-import { Search, X, Filter, Package, ShieldCheck, ArrowRight, Loader2, PhoneCall } from "lucide-react";
+import { Search, X, Filter, Package, ShieldCheck, ArrowRight, Loader2, PhoneCall, ChevronLeft, ChevronRight } from "lucide-react";
 
 function ProductsContent({ city }) {
   const [products, setProducts] = useState(getInitialProductsSync);
@@ -38,6 +38,11 @@ function ProductsContent({ city }) {
 
   useEffect(() => {
     let isMounted = true;
+
+    const stored = getStoredProducts();
+    if (stored && stored.length > 0) {
+      setProducts(stored);
+    }
 
     const loadProducts = async () => {
       try {
@@ -106,6 +111,28 @@ function ProductsContent({ city }) {
     });
   }, [products, selectedCategory, searchQuery]);
 
+  const ITEMS_PER_PAGE = 24;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Reset to page 1 whenever category or search query changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategory, searchQuery]);
+
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE) || 1;
+  const paginatedProducts = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredProducts.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredProducts, currentPage]);
+
+  const goToPage = (page) => {
+    const target = Math.max(1, Math.min(page, totalPages));
+    setCurrentPage(target);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 400, behavior: "smooth" });
+    }
+  };
+
   return (
     <div className="bg-[#f8fafc] text-[#18344b]">
       {/* Banner */}
@@ -148,11 +175,10 @@ function ProductsContent({ city }) {
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`whitespace-nowrap rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
-                      selectedCategory.toLowerCase().trim() === cat.toLowerCase().trim()
-                        ? "bg-[#245d8e] !text-white shadow-md shadow-[#245d8e]/30"
-                        : "bg-[#f0f6fb] border border-[#d0e2f2] text-[#536e84] hover:bg-[#e9f3fa] hover:text-[#18344b]"
-                    }`}
+                    className={`whitespace-nowrap rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${selectedCategory.toLowerCase().trim() === cat.toLowerCase().trim()
+                      ? "bg-[#245d8e] !text-white shadow-md shadow-[#245d8e]/30"
+                      : "bg-[#f0f6fb] border border-[#d0e2f2] text-[#536e84] hover:bg-[#e9f3fa] hover:text-[#18344b]"
+                      }`}
                   >
                     {cat}
                   </button>
@@ -163,7 +189,16 @@ function ProductsContent({ city }) {
             {/* Results Count & Clear Button */}
             <div className="mt-3 flex items-center justify-between border-t border-[#d0e2f2]/60 pt-3 text-xs font-semibold text-[#536e84]">
               <span>
-                Showing <strong className="text-[#245d8e] font-bold">{filteredProducts.length}</strong> of {products.length} instruments
+                Showing{" "}
+                <strong className="text-[#245d8e] font-bold">
+                  {filteredProducts.length === 0
+                    ? 0
+                    : `${(currentPage - 1) * ITEMS_PER_PAGE + 1} - ${Math.min(
+                      currentPage * ITEMS_PER_PAGE,
+                      filteredProducts.length
+                    )}`}
+                </strong>{" "}
+                of {filteredProducts.length} instruments
                 {selectedCategory !== "All Categories" && (
                   <span className="ml-1 text-[#245d8e]">in &ldquo;{selectedCategory}&rdquo;</span>
                 )}
@@ -224,15 +259,70 @@ function ProductsContent({ city }) {
               </div>
             </div>
           ) : (
-            <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {filteredProducts.map((product) => (
-                <ProductCard
-                  key={product.id || product.slug}
-                  product={product}
-                  makeLink={makeLink}
-                />
-              ))}
-            </div>
+            <>
+              <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                {paginatedProducts.map((product) => (
+                  <ProductCard
+                    key={product.id || product.slug}
+                    product={product}
+                    makeLink={makeLink}
+                  />
+                ))}
+              </div>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="mt-14 flex flex-wrap items-center justify-center gap-2">
+                  <button
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-[#d0e2f2] bg-white px-4 py-2.5 text-xs sm:text-sm font-bold text-[#245d8e] shadow-sm transition hover:bg-[#f0f6fb] disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <ChevronLeft size={16} />
+                    <span>Previous</span>
+                  </button>
+
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter((p) => {
+                        if (totalPages <= 7) return true;
+                        if (p === 1 || p === totalPages) return true;
+                        if (Math.abs(p - currentPage) <= 1) return true;
+                        return false;
+                      })
+                      .map((p, idx, arr) => {
+                        const prev = arr[idx - 1];
+                        const showGap = prev && p - prev > 1;
+                        return (
+                          <div key={p} className="flex items-center gap-1">
+                            {showGap && (
+                              <span className="px-2 text-xs font-bold text-[#536e84]">...</span>
+                            )}
+                            <button
+                              onClick={() => goToPage(p)}
+                              className={`h-9 min-w-9 rounded-xl px-2.5 text-xs font-bold transition ${currentPage === p
+                                  ? "bg-[#245d8e] text-white shadow-md shadow-[#245d8e]/20"
+                                  : "border border-[#d0e2f2] bg-white text-[#536e84] hover:bg-[#f0f6fb] hover:text-[#18344b]"
+                                }`}
+                            >
+                              {p}
+                            </button>
+                          </div>
+                        );
+                      })}
+                  </div>
+
+                  <button
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-[#d0e2f2] bg-white px-4 py-2.5 text-xs sm:text-sm font-bold text-[#245d8e] shadow-sm transition hover:bg-[#f0f6fb] disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <span>Next</span>
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>

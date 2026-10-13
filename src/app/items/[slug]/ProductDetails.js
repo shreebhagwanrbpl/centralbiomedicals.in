@@ -25,6 +25,7 @@ import {
     subscribeToCatalog,
 } from "@/lib/client-api";
 import { db } from "@/lib/client-api";
+import { initialContactInfo } from "@/data/siteData";
 
 const loadImageBase64 = async (src) => {
     try {
@@ -215,7 +216,7 @@ export default function ProductDetails({ slug }) {
     });
     const [selectedMedia, setSelectedMedia] = useState("image");
     const [showShare, setShowShare] = useState(false);
-    const [contactInfo, setContactInfo] = useState([]);
+    const [contactInfo, setContactInfo] = useState(initialContactInfo);
     const [downloadingBrochure, setDownloadingBrochure] = useState(false);
 
     const shareRef = useRef();

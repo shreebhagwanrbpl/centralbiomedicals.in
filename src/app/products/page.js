@@ -19,7 +19,7 @@ import {
 
 import PageBanner from "@/components/PageBanner";
 import SectionTitle from "@/components/SectionTitle";
-import { fetchAllDynamicProducts, normalizeProduct, getInitialProductsSync } from "@/lib/fetchProducts";
+import { fetchAllDynamicProducts, normalizeProduct, getInitialProductsSync, getStoredProducts } from "@/lib/fetchProducts";
 import { subscribeToCatalog } from "@/lib/client-api";
 
 export default function ProductsPage() {
@@ -28,9 +28,23 @@ export default function ProductsPage() {
   const [search, setSearch] = useState("");
   const [openedCategory, setOpenedCategory] = useState("");
   const [activeCategory, setActiveCategory] = useState("");
+  const [expandedCategories, setExpandedCategories] = useState({});
+
+  const toggleExpandCategory = (cat) => {
+    setExpandedCategories((prev) => ({
+      ...prev,
+      [cat]: !prev[cat],
+    }));
+  };
 
   useEffect(() => {
     let isMounted = true;
+
+    const stored = getStoredProducts();
+    if (stored && stored.length > 0) {
+      setProducts(stored);
+    }
+
     const loadProducts = async () => {
       try {
         const fetched = await fetchAllDynamicProducts();
@@ -286,84 +300,105 @@ export default function ProductsPage() {
                         </div>
                       </div>
 
-                      <div className="space-y-6">
-                        {list.map((product) => (
-                          <div
-                            key={product.slug}
-                            id={product.slug}
-                            className="group rounded-[30px] border border-[#d0e2f2] bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#245d8e] hover:shadow-xl"
-                          >
-                            <div className="grid items-center gap-6 lg:grid-cols-[220px_1fr_180px]">
-                              {/* Image */}
-                              <div className="flex h-[200px] items-center justify-center overflow-hidden rounded-2xl border border-[#d0e2f2] bg-[#f0f6fb] p-4">
-                                {product.image && product.image !== "/logo.png" ? (
-                                  <Image
-                                    src={product.image}
-                                    alt={product.title}
-                                    width={200}
-                                    height={200}
-                                    loading="eager"
-                                    unoptimized
-                                    className="max-h-[160px] object-contain transition duration-300 group-hover:scale-105"
-                                  />
-                                ) : (
-                                  <div className="text-center text-[#245d8e]">
-                                    <Package size={36} className="mx-auto mb-2" />
-                                    <span className="text-xs font-bold uppercase tracking-wider">{product.category || "Analyzer"}</span>
-                                  </div>
-                                )}
-                              </div>
+                      {(() => {
+                        const isExpanded = !!expandedCategories[category];
+                        const displayList = isExpanded || list.length <= 12 ? list : list.slice(0, 12);
 
-                              {/* Content */}
-                              <div>
-                                <h3 className="text-xl font-bold text-[#18344b]">
-                                  {product.title}
-                                </h3>
-
-                                <p className="mt-2 text-sm leading-relaxed text-[#536e84]">
-                                  {product.desc || product.description || "High precision diagnostic instrument engineered for clinical accuracy."}
-                                </p>
-
-                                <div className="mt-4 grid grid-cols-2 gap-3">
-                                  {product.brand && (
-                                    <div className="rounded-xl border border-[#d0e2f2] bg-[#f0f6fb] p-3">
-                                      <p className="text-[11px] font-bold uppercase tracking-wider text-[#245d8e]">
-                                        Brand
-                                      </p>
-                                      <p className="mt-0.5 text-xs font-bold text-[#18344b]">
-                                        {product.brand}
-                                      </p>
-                                    </div>
-                                  )}
-
-                                  {product.model && (
-                                    <div className="rounded-xl border border-[#d0e2f2] bg-[#f0f6fb] p-3">
-                                      <p className="text-[11px] font-bold uppercase tracking-wider text-[#245d8e]">
-                                        Model
-                                      </p>
-                                      <p className="mt-0.5 text-xs font-bold text-[#18344b]">
-                                        {product.model}
-                                      </p>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Button */}
-                              <div className="flex justify-center lg:justify-end">
-                                <Link
-                                  href={`/items/${product.slug}`}
-                                  className="w-full lg:w-auto"
+                        return (
+                          <>
+                            <div className="space-y-6">
+                              {displayList.map((product) => (
+                                <div
+                                  key={product.slug}
+                                  id={product.slug}
+                                  className="group rounded-[30px] border border-[#d0e2f2] bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#245d8e] hover:shadow-xl"
                                 >
-                                  <button className="w-full rounded-xl bg-[#245d8e] px-6 py-3.5 text-xs font-bold text-white transition-all duration-300 hover:bg-[#1c4a73] hover:shadow-lg lg:w-auto">
-                                    View Details →
-                                  </button>
-                                </Link>
-                              </div>
+                                  <div className="grid items-center gap-6 lg:grid-cols-[220px_1fr_180px]">
+                                    {/* Image */}
+                                    <div className="flex h-[200px] items-center justify-center overflow-hidden rounded-2xl border border-[#d0e2f2] bg-[#f0f6fb] p-4">
+                                      {product.image && product.image !== "/logo.png" ? (
+                                        <Image
+                                          src={product.image}
+                                          alt={product.title}
+                                          width={200}
+                                          height={200}
+                                          loading="eager"
+                                          unoptimized
+                                          className="max-h-[160px] object-contain transition duration-300 group-hover:scale-105"
+                                        />
+                                      ) : (
+                                        <div className="text-center text-[#245d8e]">
+                                          <Package size={36} className="mx-auto mb-2" />
+                                          <span className="text-xs font-bold uppercase tracking-wider">{product.category || "Analyzer"}</span>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Content */}
+                                    <div>
+                                      <h3 className="text-xl font-bold text-[#18344b]">
+                                        {product.title}
+                                      </h3>
+
+                                      <p className="mt-2 text-sm leading-relaxed text-[#536e84]">
+                                        {product.desc || product.description || "High precision diagnostic instrument engineered for clinical accuracy."}
+                                      </p>
+
+                                      <div className="mt-4 grid grid-cols-2 gap-3">
+                                        {product.brand && (
+                                          <div className="rounded-xl border border-[#d0e2f2] bg-[#f0f6fb] p-3">
+                                            <p className="text-[11px] font-bold uppercase tracking-wider text-[#245d8e]">
+                                              Brand
+                                            </p>
+                                            <p className="mt-0.5 text-xs font-bold text-[#18344b]">
+                                              {product.brand}
+                                            </p>
+                                          </div>
+                                        )}
+
+                                        {product.model && (
+                                          <div className="rounded-xl border border-[#d0e2f2] bg-[#f0f6fb] p-3">
+                                            <p className="text-[11px] font-bold uppercase tracking-wider text-[#245d8e]">
+                                              Model
+                                            </p>
+                                            <p className="mt-0.5 text-xs font-bold text-[#18344b]">
+                                              {product.model}
+                                            </p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    {/* Button */}
+                                    <div className="flex justify-center lg:justify-end">
+                                      <Link
+                                        href={`/items/${product.slug}`}
+                                        className="w-full lg:w-auto"
+                                      >
+                                        <button className="w-full rounded-xl bg-[#245d8e] px-6 py-3.5 text-xs font-bold text-white transition-all duration-300 hover:bg-[#1c4a73] hover:shadow-lg lg:w-auto">
+                                          View Details →
+                                        </button>
+                                      </Link>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                          </div>
-                        ))}
-                      </div>
+
+                            {list.length > 12 && (
+                              <div className="mt-8 text-center">
+                                <button
+                                  onClick={() => toggleExpandCategory(category)}
+                                  className="inline-flex items-center gap-2 rounded-2xl border border-[#245d8e]/40 bg-[#f0f6fb] px-6 py-3.5 text-xs font-bold text-[#245d8e] hover:bg-[#245d8e] hover:text-white transition-all shadow-sm"
+                                >
+                                  <span>{isExpanded ? `Show Less` : `Show All ${list.length} Products in ${category}`}</span>
+                                  <ChevronRight size={14} className={isExpanded ? "-rotate-90" : "rotate-90"} />
+                                </button>
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
                     </section>
                   ))}
                 </div>

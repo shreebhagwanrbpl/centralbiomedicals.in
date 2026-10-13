@@ -7,6 +7,7 @@ import { db } from "@/lib/client-api";
 import PageBanner from "@/components/PageBanner";
 import SectionTitle from "@/components/SectionTitle";
 import ContactForm from "@/components/ContactForm";
+import { initialContactInfo } from "@/data/siteData";
 import {
   Mail,
   Phone,
@@ -42,8 +43,8 @@ const faqs = [
 
 export default function ContactPage() {
   const [districtData, setDistrictData] = useState(null);
-  const [contactInfo, setContactInfo] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [contactInfo, setContactInfo] = useState(initialContactInfo);
+  const [loading, setLoading] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
 
   const pathname = usePathname();

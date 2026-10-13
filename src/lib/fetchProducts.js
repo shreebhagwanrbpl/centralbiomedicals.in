@@ -1,10 +1,10 @@
 "use client";
 
 import { makeSlug, WEBSITE_ID } from "@/lib/catalog-utils";
-import dynamicCatalogSnapshot from "@/data/dynamic-catalog.json";
+import { featuredProducts } from "@/data/featuredProducts";
 
 const STORAGE_KEY = "cb_catalog_cache_v3";
-const CLIENT_TTL = 3 * 1000; // 3 seconds before re-fetching from server
+const CLIENT_TTL = 5 * 60 * 1000; // 5 minutes client cache before re-fetching from server
 
 let cachedProducts = null;
 let lastFetchTime = 0;
@@ -58,38 +58,38 @@ export function normalizeProduct(item, defaultCategory = "Diagnostic Equipment")
   };
 }
 
+export function getStoredProducts() {
+  if (typeof window === "undefined") return null;
+  try {
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch {
+    // ignore JSON errors
+  }
+  return null;
+}
+
 /**
- * Synchronously retrieves initial products in 0 milliseconds.
- * Checks (1) In-memory cache, (2) Browser localStorage, (3) Static pre-bundled snapshot.
- * Guarantees that the UI never starts empty or with a skeleton on initial render or tab switch.
+ * Synchronously retrieves initial products for initial render.
+ * Evaluates deterministically on BOTH server (SSR) and client initial render (hydration)
+ * to strictly prevent React hydration mismatches.
+ * On subsequent client-side SPA route navigations, returns in-memory cachedProducts if available.
  */
 export function getInitialProductsSync() {
   if (cachedProducts !== null && cachedProducts.length > 0) {
     return cachedProducts;
   }
 
-  // Check localStorage (persisted from previous visit or tab)
-  if (typeof window !== "undefined") {
-    try {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          cachedProducts = parsed;
-          return parsed;
-        }
-      }
-    } catch {
-      // ignore JSON errors
-    }
-  }
-
-  // Fallback to static snapshot pre-bundled with the app (0ms load)
-  if (Array.isArray(dynamicCatalogSnapshot?.products) && dynamicCatalogSnapshot.products.length > 0) {
-    const list = dynamicCatalogSnapshot.products
+  // Fallback to lightweight featured products (0ms load, 0 bundle bloat, identical on SSR & hydration)
+  if (Array.isArray(featuredProducts) && featuredProducts.length > 0) {
+    const list = featuredProducts
       .map((p) => normalizeProduct(p))
       .filter(Boolean);
-    cachedProducts = list;
     return list;
   }
 
@@ -146,6 +146,14 @@ if (typeof window !== "undefined") {
 export async function fetchAllDynamicProducts({ force = false, silent = false } = {}) {
   const now = Date.now();
 
+  // If in-memory cache is empty, restore from localStorage first (safe in async function)
+  if (!cachedProducts) {
+    const stored = getStoredProducts();
+    if (stored) {
+      cachedProducts = stored;
+    }
+  }
+
   // Return memory cache immediately if fresh and not forced
   if (!force && cachedProducts !== null && cachedProducts.length > 0 && now - lastFetchTime < CLIENT_TTL) {
     return cachedProducts;
@@ -153,7 +161,9 @@ export async function fetchAllDynamicProducts({ force = false, silent = false } 
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    const timeoutId = setTimeout(() => {
+      controller.abort(new DOMException("Catalog fetch timeout", "TimeoutError"));
+    }, 12000);
 
     const response = await fetch(`/api/catalog?websiteId=${encodeURIComponent(WEBSITE_ID)}&_t=${now}`, {
       signal: controller.signal,
@@ -182,7 +192,8 @@ export async function fetchAllDynamicProducts({ force = false, silent = false } 
       // Persist to localStorage for 0ms loads on future page loads
       if (typeof window !== "undefined" && productsList.length > 0) {
         try {
-          window.localStorage.setItem(STORAGE_KEY, JSON.stringify(productsList));
+          // Persist top 200 items in localStorage for instant 0ms boot without exceeding 5MB browser quota
+          window.localStorage.setItem(STORAGE_KEY, JSON.stringify(productsList.slice(0, 200)));
         } catch {
           // ignore quota error
         }
@@ -205,8 +216,8 @@ export async function fetchAllDynamicProducts({ force = false, silent = false } 
     }
   }
 
-  // Fallback to initial/cached products so user never sees empty screen
-  return getInitialProductsSync();
+  // Fallback to cachedProducts or initial static products so user never sees empty screen
+  return (cachedProducts && cachedProducts.length > 0) ? cachedProducts : getInitialProductsSync();
 }
 
 export async function fetchAllDynamicCategories({ force = false } = {}) {
